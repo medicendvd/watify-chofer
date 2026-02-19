@@ -38,7 +38,7 @@ function roleHome(role: Role): string {
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/app">
       <AuthProvider>
         <Routes>
           <Route path="/"       element={<RootRedirect />} />

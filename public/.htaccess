@@ -1,9 +1,9 @@
-# Redirige todo a index.html para que React Router maneje las rutas
+# Redirige todo dentro de /app/ a index.html para que React Router funcione
 <IfModule mod_rewrite.c>
   RewriteEngine On
-  RewriteBase /
+  RewriteBase /app/
   RewriteRule ^index\.html$ - [L]
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteRule . /index.html [L]
+  RewriteRule . /app/index.html [L]
 </IfModule>

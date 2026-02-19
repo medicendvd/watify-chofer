@@ -24,15 +24,15 @@ jobs:
       - name: Construir app (npm run build)
         run: npm run build
 
-      # Sube el frontend compilado a public_html/
-      - name: Deploy frontend → public_html/
+      # Sube el frontend compilado a public_html/app/
+      - name: Deploy frontend → public_html/app/
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USER }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./dist/
-          server-dir: /public_html/
+          server-dir: /public_html/app/
 
       # Sube la API PHP a public_html/api/
       # ⚠️ Excluye db.php para no sobreescribir las credenciales de producción

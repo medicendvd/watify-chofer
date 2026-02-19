@@ -1,0 +1,127 @@
+export type Role = 'Admin' | 'Visor' | 'Chofer';
+
+export interface User {
+  id: number;
+  name: string;
+  role: Role;
+}
+
+export interface Product {
+  id: number;
+  name: string;
+  base_price: number;
+  display_order: number;
+}
+
+export interface PaymentMethod {
+  id: number;
+  name: string;
+  color: string;
+  icon: string;
+  is_active: boolean;
+}
+
+export interface Company {
+  id: number;
+  name: string;
+  is_active: boolean;
+  special_prices: Record<number, number>; // product_id -> price
+}
+
+export interface CartItem {
+  product: Product;
+  quantity: number;
+  unit_price: number;
+}
+
+export interface TransactionItem {
+  product_id: number;
+  product_name: string;
+  quantity: number;
+  unit_price: number;
+  subtotal: number;
+}
+
+export interface Transaction {
+  id: number;
+  user_id: number;
+  chofer_name: string;
+  customer_name: string | null;
+  company_id: number | null;
+  company_name: string | null;
+  payment_method_id: number;
+  payment_method_name: string;
+  payment_method_color: string;
+  payment_method_icon: string;
+  total: number;
+  notes: string | null;
+  transaction_date: string;
+  items: TransactionItem[];
+}
+
+export interface GarrafonStats {
+  cargados: number;
+  recargas_vendidas: number;
+  nuevos_vendidos: number;
+  total_quebrados: number;
+  quebrados_llenos: number;
+  quebrados_vacios: number;
+  llenos_a_regresar: number;
+  vacios_a_regresar: number;
+  total_a_regresar: number;
+}
+
+export interface Route {
+  id: number;
+  garrafones_loaded: number;
+  status: 'active' | 'finished';
+  started_at: string;
+  garrafones: GarrafonStats;
+}
+
+export interface RouteSummary {
+  route_id: number;
+  by_method: { method: string; color: string; icon: string; total: number; count: number }[];
+  companies: { company: string; total: number; count: number }[];
+  total_negocios: number;
+  garrafones: GarrafonStats;
+}
+
+export interface ActiveDriverRoute {
+  route_id: number;
+  chofer_id: number;
+  chofer_name: string;
+  status: 'active' | 'finished';
+  started_at: string;
+  finished_at: string | null;
+  total_ventas: number;
+  products: { product: string; units: number; total: number }[];
+  by_method: { method: string; color: string; icon: string; total: number; count: number }[];
+  companies: { company: string; total: number; count: number }[];
+  total_negocios: number;
+  garrafones: GarrafonStats;
+}
+
+export interface DashboardData {
+  date: string;
+  grand_total: number;
+  by_method: { method: string; color: string; icon: string; total: number; count: number }[];
+  by_product: { product: string; units: number; total: number }[];
+  by_driver: {
+    id: number;
+    name: string;
+    total: number;
+    methods: {
+      method: string;
+      color: string;
+      icon: string;
+      company_name: string | null;
+      total: number;
+      count: number;
+    }[];
+  }[];
+  weekly: { day: string; total: number }[];
+  dod: { today: number; yesterday: number; pct: number | null };
+  wow: { this_week_day: number; last_week_day: number; pct: number | null };
+  mom: { this_month: number; last_month: number; pct: number | null };
+}

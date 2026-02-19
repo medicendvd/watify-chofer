@@ -1,0 +1,48 @@
+name: Deploy a watify.mx
+
+on:
+  push:
+    branches: [main]   # Se dispara cada vez que haces push a main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Construir app (npm run build)
+        run: npm run build
+
+      # Sube el frontend compilado a public_html/
+      - name: Deploy frontend → public_html/
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./dist/
+          server-dir: /public_html/
+
+      # Sube la API PHP a public_html/api/
+      # ⚠️ Excluye db.php para no sobreescribir las credenciales de producción
+      - name: Deploy API PHP → public_html/api/
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./api/
+          server-dir: /public_html/api/
+          exclude: |
+            **/config/db.php

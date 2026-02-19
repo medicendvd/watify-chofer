@@ -63,6 +63,9 @@ function RouteCard({ route, muted = false, routeNumber = 1 }: RouteCardProps) {
           <p className="font-bold text-lg">
             ${Number(route.total_ventas).toLocaleString('es-MX', { minimumFractionDigits: 0 })}
           </p>
+          <p className="mt-0.5 font-bold" style={{ fontSize: '18px', color: '#41ffac' }}>
+            👤 {route.transaction_count} venta{route.transaction_count !== 1 ? 's' : ''}
+          </p>
         </div>
       </div>
 

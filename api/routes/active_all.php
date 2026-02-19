@@ -111,7 +111,8 @@ foreach ($routes as $route) {
         'status'        => $route['status'],
         'started_at'    => $route['started_at'],
         'finished_at'   => $route['finished_at'],
-        'total_ventas'  => (float)array_sum(array_column($methods, 'total')),
+        'total_ventas'      => (float)array_sum(array_column($methods, 'total')),
+        'transaction_count' => (int)array_sum(array_column($methods, 'count')),
         'products'      => array_map(fn($p) => [
             'product' => $p['product'],
             'units'   => (int)$p['units'],

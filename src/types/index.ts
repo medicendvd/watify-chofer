@@ -95,6 +95,7 @@ export interface ActiveDriverRoute {
   started_at: string;
   finished_at: string | null;
   total_ventas: number;
+  transaction_count: number;
   products: { product: string; units: number; total: number }[];
   by_method: { method: string; color: string; icon: string; total: number; count: number }[];
   companies: { company: string; total: number; count: number }[];

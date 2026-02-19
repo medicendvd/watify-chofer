@@ -33,9 +33,16 @@ jobs:
           FTP_USER: ${{ secrets.FTPUSER }}
           FTP_PASSWORD: ${{ secrets.FTPPASSWORD }}
         run: |
-          lftp -c "set ftp:ssl-allow no; \
-                   open -u $FTP_USER,$FTP_PASSWORD ftp://$FTP_HOST; \
-                   mirror --reverse --delete --verbose ./dist/ /public_html/app/"
+          lftp -c "
+            set ftp:ssl-allow no;
+            set ftp:passive-mode yes;
+            set net:timeout 30;
+            set net:max-retries 3;
+            set net:reconnect-interval-base 5;
+            open -u '$FTP_USER','$FTP_PASSWORD' ftp://$FTP_HOST;
+            mirror --reverse --delete --verbose --parallel=5 ./dist/ /public_html/app/;
+            bye
+          "
 
       - name: Deploy API PHP → public_html/api/
         env:
@@ -43,8 +50,13 @@ jobs:
           FTP_USER: ${{ secrets.FTPUSER }}
           FTP_PASSWORD: ${{ secrets.FTPPASSWORD }}
         run: |
-          lftp -c "set ftp:ssl-allow no; \
-                   open -u $FTP_USER,$FTP_PASSWORD ftp://$FTP_HOST; \
-                   mirror --reverse --verbose \
-                     --exclude config/db.php \
-                     ./api/ /public_html/api/"
+          lftp -c "
+            set ftp:ssl-allow no;
+            set ftp:passive-mode yes;
+            set net:timeout 30;
+            set net:max-retries 3;
+            set net:reconnect-interval-base 5;
+            open -u '$FTP_USER','$FTP_PASSWORD' ftp://$FTP_HOST;
+            mirror --reverse --verbose --parallel=5 --exclude config/db.php ./api/ /public_html/api/;
+            bye
+          "

@@ -24,39 +24,25 @@ jobs:
       - name: Construir app
         run: npm run build
 
-      - name: Instalar lftp
-        run: sudo apt-get install -y lftp
-
       - name: Deploy frontend → public_html/app/
-        env:
-          FTP_HOST: ${{ secrets.HOSTNAME }}
-          FTP_USER: ${{ secrets.FTPUSER }}
-          FTP_PASSWORD: ${{ secrets.FTPPASSWORD }}
-        run: |
-          lftp -c "
-            set ftp:ssl-allow no;
-            set ftp:passive-mode yes;
-            set net:timeout 30;
-            set net:max-retries 3;
-            set net:reconnect-interval-base 5;
-            open -u '$FTP_USER','$FTP_PASSWORD' ftp://$FTP_HOST;
-            mirror --reverse --delete --verbose --parallel=5 ./dist/ /public_html/app/;
-            bye
-          "
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.HOSTNAME }}
+          username: ${{ secrets.FTPUSER }}
+          password: ${{ secrets.FTPPASSWORD }}
+          local-dir: ./dist/
+          server-dir: /public_html/app/
+          protocol: ftp
 
       - name: Deploy API PHP → public_html/api/
-        env:
-          FTP_HOST: ${{ secrets.HOSTNAME }}
-          FTP_USER: ${{ secrets.FTPUSER }}
-          FTP_PASSWORD: ${{ secrets.FTPPASSWORD }}
-        run: |
-          lftp -c "
-            set ftp:ssl-allow no;
-            set ftp:passive-mode yes;
-            set net:timeout 30;
-            set net:max-retries 3;
-            set net:reconnect-interval-base 5;
-            open -u '$FTP_USER','$FTP_PASSWORD' ftp://$FTP_HOST;
-            mirror --reverse --verbose --parallel=5 --exclude config/db.php ./api/ /public_html/api/;
-            bye
-          "
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.HOSTNAME }}
+          username: ${{ secrets.FTPUSER }}
+          password: ${{ secrets.FTPPASSWORD }}
+          local-dir: ./api/
+          server-dir: /public_html/api/
+          protocol: ftp
+          exclude: |
+            **/.git*
+            **/config/db.php

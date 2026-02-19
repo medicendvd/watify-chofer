@@ -29,9 +29,9 @@ jobs:
 
       - name: Deploy frontend → public_html/app/
         env:
-          FTP_HOST: ${{ secrets.FTP_HOST }}
-          FTP_USER: ${{ secrets.FTP_USER }}
-          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_HOST: ${{ secrets.HOSTNAME }}
+          FTP_USER: ${{ secrets.FTPUSER }}
+          FTP_PASSWORD: ${{ secrets.FTPPASSWORD }}
         run: |
           lftp -c "set ftp:ssl-allow no; \
                    open -u $FTP_USER,$FTP_PASSWORD ftp://$FTP_HOST; \
@@ -39,9 +39,9 @@ jobs:
 
       - name: Deploy API PHP → public_html/api/
         env:
-          FTP_HOST: ${{ secrets.FTP_HOST }}
-          FTP_USER: ${{ secrets.FTP_USER }}
-          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_HOST: ${{ secrets.HOSTNAME }}
+          FTP_USER: ${{ secrets.FTPUSER }}
+          FTP_PASSWORD: ${{ secrets.FTPPASSWORD }}
         run: |
           lftp -c "set ftp:ssl-allow no; \
                    open -u $FTP_USER,$FTP_PASSWORD ftp://$FTP_HOST; \

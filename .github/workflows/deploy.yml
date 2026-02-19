@@ -2,7 +2,7 @@ name: Deploy a watify.mx
 
 on:
   push:
-    branches: [main]   # Se dispara cada vez que haces push a main
+    branches: [main]
 
 jobs:
   deploy:
@@ -21,28 +21,30 @@ jobs:
       - name: Instalar dependencias
         run: npm ci
 
-      - name: Construir app (npm run build)
+      - name: Construir app
         run: npm run build
 
-      # Sube el frontend compilado a public_html/app/
-      - name: Deploy frontend → public_html/app/
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_HOST }}
-          username: ${{ secrets.FTP_USER }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./dist/
-          server-dir: /public_html/app/
+      - name: Instalar lftp
+        run: sudo apt-get install -y lftp
 
-      # Sube la API PHP a public_html/api/
-      # ⚠️ Excluye db.php para no sobreescribir las credenciales de producción
+      - name: Deploy frontend → public_html/app/
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USER: ${{ secrets.FTP_USER }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          lftp -c "set ftp:ssl-allow no; \
+                   open -u $FTP_USER,$FTP_PASSWORD ftp://$FTP_HOST; \
+                   mirror --reverse --delete --verbose ./dist/ /public_html/app/"
+
       - name: Deploy API PHP → public_html/api/
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_HOST }}
-          username: ${{ secrets.FTP_USER }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./api/
-          server-dir: /public_html/api/
-          exclude: |
-            **/config/db.php
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USER: ${{ secrets.FTP_USER }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          lftp -c "set ftp:ssl-allow no; \
+                   open -u $FTP_USER,$FTP_PASSWORD ftp://$FTP_HOST; \
+                   mirror --reverse --verbose \
+                     --exclude config/db.php \
+                     ./api/ /public_html/api/"

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuthContext } from '../store/authContext';
 import { api } from '../lib/api';
 import type { DashboardData, ActiveDriverRoute } from '../types';
+import { Link } from 'react-router-dom';
 import SummaryCards from '../components/admin/SummaryCards';
 import DriverSummary from '../components/admin/DriverSummary';
 import PerformanceCharts from '../components/admin/PerformanceCharts';
@@ -92,6 +93,12 @@ export default function Admin() {
             <p className="text-water-300 text-xs">Hola, {user?.name}</p>
           </div>
           <div className="flex gap-2">
+            <Link
+              to="/live"
+              className="text-water-200 hover:text-white text-sm py-1.5 px-3 border border-water-500 rounded-lg transition-colors"
+            >
+              🖥️ En vivo
+            </Link>
             <button
               onClick={() => { loadDashboard(); loadActiveRoutes(); }}
               className="text-water-200 hover:text-white text-sm py-1.5 px-3 border border-water-500 rounded-lg transition-colors"

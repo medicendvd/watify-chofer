@@ -31,9 +31,29 @@ jobs:
           username: ${{ secrets.FTPUSER }}
           password: ${{ secrets.FTPPASSWORD }}
           local-dir: ./dist/
-          server-dir: ./app/
+          server-dir: ./public_html/app/
           protocol: ftp
+          state-name: .deploy-state-v2
           log-level: verbose
+
+      - name: Verificar deploy
+        run: |
+          sleep 10
+          HTTP=$(curl -s -o /dev/null -w "%{http_code}" "https://watify.mx/app/version.txt")
+          echo "HTTP status version.txt: $HTTP"
+          if [ "$HTTP" = "200" ]; then
+            CONTENT=$(curl -s "https://watify.mx/app/version.txt")
+            echo "Contenido version.txt: $CONTENT"
+            if echo "$CONTENT" | grep -q "doctype"; then
+              echo "ERROR: version.txt retorna HTML (redireccion), el deploy NO llego al lugar correcto"
+              exit 1
+            else
+              echo "OK: version.txt es accesible correctamente"
+            fi
+          else
+            echo "ERROR: version.txt retorno HTTP $HTTP"
+            exit 1
+          fi
 
       - name: Deploy API PHP → public_html/api/
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
@@ -42,8 +62,9 @@ jobs:
           username: ${{ secrets.FTPUSER }}
           password: ${{ secrets.FTPPASSWORD }}
           local-dir: ./api/
-          server-dir: ./api/
+          server-dir: ./public_html/api/
           protocol: ftp
+          state-name: .deploy-state-v2
           exclude: |
             **/.git*
             **/config/db.php

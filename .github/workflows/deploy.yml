@@ -33,7 +33,6 @@ jobs:
           local-dir: ./dist/
           server-dir: ./app/
           protocol: ftp
-          dangerous-clean-slate: true
           log-level: verbose
 
       - name: Deploy API PHP → public_html/api/

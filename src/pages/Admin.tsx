@@ -95,7 +95,7 @@ export default function Admin() {
           <div className="flex gap-2">
             <Link
               to="/live"
-              className="text-water-200 hover:text-white text-sm py-1.5 px-3 border border-water-500 rounded-lg transition-colors"
+              className="text-water-200 hover:text-white text-sm font-medium py-1.5 px-3 border border-water-500 rounded-lg transition-colors"
             >
               🖥️ En vivo
             </Link>

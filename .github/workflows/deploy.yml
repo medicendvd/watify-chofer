@@ -33,6 +33,7 @@ jobs:
           local-dir: ./dist/
           server-dir: /public_html/app/
           protocol: ftp
+          dangerous-clean-slate: true
 
       - name: Deploy API PHP → public_html/api/
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5

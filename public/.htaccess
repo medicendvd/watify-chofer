@@ -7,3 +7,15 @@
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteRule . /app/index.html [L]
 </IfModule>
+
+# No cachear index.html (para que siempre se sirva la versión más reciente)
+<FilesMatch "index\.html$">
+  <IfModule mod_headers.c>
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+  </IfModule>
+  <IfModule LiteSpeed>
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+  </IfModule>
+</FilesMatch>

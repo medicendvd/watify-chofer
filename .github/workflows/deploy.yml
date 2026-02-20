@@ -24,6 +24,24 @@ jobs:
       - name: Construir app
         run: npm run build && echo "$(date -u)" > dist/version.txt
 
+      - name: Diagnóstico FTP - localizar directorio web correcto
+        run: |
+          echo "=== Listado raiz FTP ==="
+          curl -s --user "${{ secrets.FTPUSER }}:${{ secrets.FTPPASSWORD }}" \
+            "ftp://${{ secrets.HOSTNAME }}/" 2>/dev/null || echo "(sin acceso)"
+          echo ""
+          echo "=== Contenido ftp/app/assets/ ==="
+          curl -s --user "${{ secrets.FTPUSER }}:${{ secrets.FTPPASSWORD }}" \
+            "ftp://${{ secrets.HOSTNAME }}/app/assets/" 2>/dev/null || echo "(no existe)"
+          echo ""
+          echo "=== Contenido ftp/public_html/app/assets/ ==="
+          curl -s --user "${{ secrets.FTPUSER }}:${{ secrets.FTPPASSWORD }}" \
+            "ftp://${{ secrets.HOSTNAME }}/public_html/app/assets/" 2>/dev/null || echo "(no existe)"
+          echo ""
+          echo "=== Contenido ftp/public_html/public_html/app/assets/ ==="
+          curl -s --user "${{ secrets.FTPUSER }}:${{ secrets.FTPPASSWORD }}" \
+            "ftp://${{ secrets.HOSTNAME }}/public_html/public_html/app/assets/" 2>/dev/null || echo "(no existe)"
+
       - name: Deploy frontend → public_html/app/
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:

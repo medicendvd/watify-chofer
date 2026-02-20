@@ -31,7 +31,7 @@ jobs:
           username: ${{ secrets.FTPUSER }}
           password: ${{ secrets.FTPPASSWORD }}
           local-dir: ./dist/
-          server-dir: ./public_html/app/
+          server-dir: ./app/
           protocol: ftp
           dangerous-clean-slate: true
           log-level: verbose
@@ -43,7 +43,7 @@ jobs:
           username: ${{ secrets.FTPUSER }}
           password: ${{ secrets.FTPPASSWORD }}
           local-dir: ./api/
-          server-dir: ./public_html/api/
+          server-dir: ./api/
           protocol: ftp
           exclude: |
             **/.git*

@@ -56,6 +56,7 @@ export const api = {
   // Routes
   getActiveRoute: () => request('/routes/index.php'),
   getActiveRoutes: () => request('/routes/active_all.php'),
+  getLiveRoutes: () => request('/routes/live.php'),
   createRoute: (garrafones_loaded: number) =>
     request('/routes/index.php', { method: 'POST', body: JSON.stringify({ garrafones_loaded }) }),
   finishRoute: (route_id: number) =>

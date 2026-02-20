@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import Chofer from './pages/Chofer';
 import Admin from './pages/Admin';
 import Visor from './pages/Visor';
+import Live from './pages/Live';
 import type { Role } from './types';
 
 function ProtectedRoute({ element, roles }: { element: React.ReactElement; roles: Role[] }) {
@@ -46,6 +47,7 @@ export default function App() {
           <Route path="/chofer" element={<ProtectedRoute element={<Chofer />} roles={['Chofer', 'Admin']} />} />
           <Route path="/admin"  element={<ProtectedRoute element={<Admin />}  roles={['Admin']} />} />
           <Route path="/visor"  element={<ProtectedRoute element={<Visor />}  roles={['Visor', 'Admin']} />} />
+          <Route path="/live"   element={<ProtectedRoute element={<Live />}   roles={['Admin']} />} />
           <Route path="*"       element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>

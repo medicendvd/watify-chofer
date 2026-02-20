@@ -103,6 +103,25 @@ export interface ActiveDriverRoute {
   garrafones: GarrafonStats;
 }
 
+export interface LiveSaleDetail {
+  customer_name: string | null;
+  garrafones: number;
+}
+
+export interface LiveRoute {
+  route_id: number;
+  chofer_id: number;
+  chofer_name: string;
+  status: 'active' | 'finished';
+  started_at: string;
+  finished_at: string | null;
+  transaction_count: number;
+  garrafones: GarrafonStats;
+  companies: { company: string; garrafones: number }[];
+  link_sales: LiveSaleDetail[];
+  tarjeta_sales: LiveSaleDetail[];
+}
+
 export interface DashboardData {
   date: string;
   grand_total: number;

@@ -11,7 +11,7 @@ $pdo    = getDB();
 if ($method === 'GET') {
     // Devuelve empresas con sus precios especiales por producto
     $companies = $pdo->query(
-        'SELECT c.id, c.name, c.is_active FROM companies c WHERE c.is_active = 1 ORDER BY c.name ASC'
+        'SELECT c.id, c.name, c.is_active FROM companies c WHERE c.is_active = 1 ORDER BY c.display_order ASC, c.name ASC'
     )->fetchAll();
 
     // Adjuntar precios especiales a cada empresa

@@ -9,6 +9,13 @@
  */
 function requireAuth(array $roles = []): array {
     if (session_status() === PHP_SESSION_NONE) {
+        session_set_cookie_params([
+            'lifetime' => 30 * 24 * 60 * 60,
+            'path'     => '/',
+            'secure'   => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ]);
         session_start();
     }
     if (empty($_SESSION['user_id'])) {

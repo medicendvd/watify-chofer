@@ -5,9 +5,10 @@ import type { Route } from '../../types';
 interface Props {
   userName: string;
   onRouteCreated: (route: Route) => void;
+  onBack: () => void;
 }
 
-export default function GarrafonesSetup({ userName, onRouteCreated }: Props) {
+export default function GarrafonesSetup({ userName, onRouteCreated, onBack }: Props) {
   const [count, setCount] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -30,6 +31,12 @@ export default function GarrafonesSetup({ userName, onRouteCreated }: Props) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-water-500 to-water-800 flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
+        <button
+          onClick={onBack}
+          className="flex items-center gap-1.5 text-water-100 hover:text-white text-sm mb-6 transition-colors"
+        >
+          ← Cerrar sesión
+        </button>
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-full shadow-lg mb-4">
             <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-water-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

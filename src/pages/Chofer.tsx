@@ -151,6 +151,7 @@ export default function Chofer() {
           setRoute(r);
           setRouteLoading(false);
         }}
+        onBack={logout}
       />
     );
   }
@@ -172,9 +173,6 @@ export default function Chofer() {
       </div>
 
       <div className="px-4 mt-5 space-y-5 max-w-md mx-auto">
-
-        {/* Contador de garrafones */}
-        <GarrafonesCounter stats={route.garrafones} />
 
         {/* Nombre del cliente */}
         <div>
@@ -286,6 +284,9 @@ export default function Chofer() {
             />
           </div>
         )}
+
+        {/* Contador de garrafones */}
+        <GarrafonesCounter stats={route.garrafones} />
 
         {/* Botón garrafón quebrado */}
         <button

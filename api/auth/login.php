@@ -3,6 +3,13 @@ require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../utils/response.php';
 
 cors();
+session_set_cookie_params([
+    'lifetime' => 30 * 24 * 60 * 60,
+    'path'     => '/',
+    'secure'   => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+    'httponly' => true,
+    'samesite' => 'Lax',
+]);
 session_start();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') jsonError('Método no permitido', 405);

@@ -22,7 +22,7 @@ jobs:
         run: npm ci
 
       - name: Construir app
-        run: npm run build
+        run: npm run build && echo "$(date -u)" > dist/version.txt
 
       - name: Deploy frontend → public_html/app/
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5

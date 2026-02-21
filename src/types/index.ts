@@ -138,6 +138,8 @@ export interface DashboardData {
       company_name: string | null;
       total: number;
       count: number;
+      garrafones: number;
+      customers: { name: string; garrafones: number }[];
     }[];
   }[];
   weekly: { day: string; total: number }[];

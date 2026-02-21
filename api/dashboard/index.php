@@ -44,16 +44,48 @@ $byDriver = $pdo->prepare("
            pm.name AS method, pm.color, pm.icon,
            c.name AS company_name,
            SUM(t.total) AS total,
-           COUNT(t.id)  AS count
+           COUNT(t.id)  AS count,
+           COALESCE(SUM(ti_agg.qty), 0) AS garrafones
     FROM transactions t
     JOIN users u            ON u.id  = t.user_id
     JOIN payment_methods pm ON pm.id = t.payment_method_id
     LEFT JOIN companies c   ON c.id  = t.company_id
+    LEFT JOIN (
+        SELECT transaction_id, SUM(quantity) AS qty
+        FROM transaction_items
+        GROUP BY transaction_id
+    ) ti_agg ON ti_agg.transaction_id = t.id
     WHERE DATE(t.transaction_date) = ? AND u.role = 'Chofer'
     GROUP BY u.id, pm.id, c.id
     ORDER BY u.name, pm.name
 ");
 $byDriver->execute([$date]);
+
+// Clientes con nombre para Link y Tarjeta
+$clienteQuery = $pdo->prepare("
+    SELECT t.user_id AS chofer_id,
+           pm.name AS method,
+           t.customer_name,
+           COALESCE(SUM(ti.quantity), 0) AS garrafones
+    FROM transactions t
+    JOIN payment_methods pm ON pm.id = t.payment_method_id
+    LEFT JOIN transaction_items ti ON ti.transaction_id = t.id
+    WHERE DATE(t.transaction_date) = ?
+      AND pm.name IN ('Link', 'Tarjeta')
+      AND t.customer_name IS NOT NULL AND t.customer_name != ''
+    GROUP BY t.id
+    ORDER BY t.transaction_date
+");
+$clienteQuery->execute([$date]);
+
+$clientesByKey = [];
+foreach ($clienteQuery->fetchAll() as $row) {
+    $key = $row['chofer_id'] . '_' . $row['method'];
+    $clientesByKey[$key][] = [
+        'name'       => $row['customer_name'],
+        'garrafones' => (int)$row['garrafones'],
+    ];
+}
 
 // Agrupar por chofer
 $drivers = [];
@@ -62,6 +94,7 @@ foreach ($byDriver->fetchAll() as $row) {
     if (!isset($drivers[$cid])) {
         $drivers[$cid] = ['id' => $cid, 'name' => $row['chofer_name'], 'methods' => [], 'total' => 0];
     }
+    $methodKey = $cid . '_' . $row['method'];
     $drivers[$cid]['methods'][] = [
         'method'       => $row['method'],
         'color'        => $row['color'],
@@ -69,6 +102,8 @@ foreach ($byDriver->fetchAll() as $row) {
         'company_name' => $row['company_name'],
         'total'        => (float)$row['total'],
         'count'        => (int)$row['count'],
+        'garrafones'   => (int)$row['garrafones'],
+        'customers'    => $clientesByKey[$methodKey] ?? [],
     ];
     $drivers[$cid]['total'] += (float)$row['total'];
 }

@@ -36,24 +36,41 @@ export default function DriverSummary({ drivers }: Props) {
             </div>
 
             {/* Métodos */}
-            <div className="px-4 py-3 space-y-2">
+            <div className="px-4 py-3 space-y-3">
               {driver.methods.map((m, idx) => (
-                <div key={idx} className="flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="text-xs font-semibold px-2 py-0.5 rounded-full text-white"
-                      style={{ backgroundColor: m.color }}
-                    >
-                      {m.method}
+                <div key={idx}>
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span
+                        className="text-xs font-semibold px-2 py-0.5 rounded-full text-white"
+                        style={{ backgroundColor: m.color }}
+                      >
+                        {m.method}
+                      </span>
+                      {m.company_name && (
+                        <span className="text-xs font-medium text-gray-700">{m.company_name}</span>
+                      )}
+                      <span className="text-xs text-gray-400">
+                        {m.count} vta{m.count !== 1 ? 's' : ''} · {m.garrafones} garr
+                      </span>
+                    </div>
+                    <span className="text-sm font-medium text-gray-800">
+                      ${Number(m.total).toFixed(0)}
                     </span>
-                    {m.company_name && (
-                      <span className="text-xs text-gray-500">{m.company_name}</span>
-                    )}
-                    <span className="text-xs text-gray-400">{m.count} vta{m.count !== 1 ? 's' : ''}</span>
                   </div>
-                  <span className="text-sm font-medium text-gray-800">
-                    ${Number(m.total).toFixed(0)}
-                  </span>
+
+                  {/* Clientes con nombre (Link / Tarjeta) */}
+                  {m.customers.length > 0 && (
+                    <div className="mt-1.5 ml-2 space-y-0.5">
+                      {m.customers.map((c, ci) => (
+                        <div key={ci} className="flex items-center gap-1.5 text-xs text-gray-500">
+                          <span className="w-1 h-1 rounded-full bg-gray-300 inline-block flex-shrink-0" />
+                          <span>{c.name}</span>
+                          <span className="text-gray-400">· {c.garrafones} garr</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

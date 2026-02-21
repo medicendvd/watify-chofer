@@ -14,9 +14,6 @@ import GarrafonesCounter from '../components/chofer/GarrafonesCounter';
 import BrokenGarrafonModal from '../components/chofer/BrokenGarrafonModal';
 import FinalizarRutaModal from '../components/chofer/FinalizarRutaModal';
 
-function formatDate(d: Date) {
-  return d.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-}
 
 const PAYMENT_METHODS: PaymentMethod[] = [
   { id: 1, name: 'Efectivo', color: '#22c55e', icon: 'banknote',    is_active: true },
@@ -54,8 +51,6 @@ export default function Chofer() {
   // Modales
   const [showBroken, setShowBroken]           = useState(false);
   const [showFinalizar, setShowFinalizar]     = useState(false);
-
-  const today = new Date();
 
   // Al cargar: verificar ruta activa
   useEffect(() => {

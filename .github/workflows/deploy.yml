@@ -31,9 +31,9 @@ jobs:
           username: ${{ secrets.FTPUSER }}
           password: ${{ secrets.FTPPASSWORD }}
           local-dir: ./dist/
-          server-dir: /public_html/app/
+          server-dir: ./app/
           protocol: ftp
-          state-name: .deploy-state-v4
+          state-name: .deploy-state-v5
           log-level: verbose
 
       - name: Verificar deploy
@@ -58,9 +58,9 @@ jobs:
           username: ${{ secrets.FTPUSER }}
           password: ${{ secrets.FTPPASSWORD }}
           local-dir: ./api/
-          server-dir: /public_html/api/
+          server-dir: ./api/
           protocol: ftp
-          state-name: .deploy-state-v4
+          state-name: .deploy-state-v5
           exclude: |
             **/.git*
             **/config/db.php

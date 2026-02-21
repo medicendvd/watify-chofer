@@ -24,34 +24,16 @@ jobs:
       - name: Construir app
         run: npm run build && echo "$(date -u)" > dist/version.txt
 
-      - name: Diagnóstico FTP - localizar directorio web correcto
-        run: |
-          echo "=== Listado raiz FTP ==="
-          curl -s --user "${{ secrets.FTPUSER }}:${{ secrets.FTPPASSWORD }}" \
-            "ftp://${{ secrets.HOSTNAME }}/" 2>/dev/null || echo "(sin acceso)"
-          echo ""
-          echo "=== Contenido ftp/app/assets/ ==="
-          curl -s --user "${{ secrets.FTPUSER }}:${{ secrets.FTPPASSWORD }}" \
-            "ftp://${{ secrets.HOSTNAME }}/app/assets/" 2>/dev/null || echo "(no existe)"
-          echo ""
-          echo "=== Contenido ftp/public_html/app/assets/ ==="
-          curl -s --user "${{ secrets.FTPUSER }}:${{ secrets.FTPPASSWORD }}" \
-            "ftp://${{ secrets.HOSTNAME }}/public_html/app/assets/" 2>/dev/null || echo "(no existe)"
-          echo ""
-          echo "=== Contenido ftp/public_html/public_html/app/assets/ ==="
-          curl -s --user "${{ secrets.FTPUSER }}:${{ secrets.FTPPASSWORD }}" \
-            "ftp://${{ secrets.HOSTNAME }}/public_html/public_html/app/assets/" 2>/dev/null || echo "(no existe)"
-
-      - name: Deploy frontend → public_html/app/
+      - name: Deploy frontend → app/
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.HOSTNAME }}
           username: ${{ secrets.FTPUSER }}
           password: ${{ secrets.FTPPASSWORD }}
           local-dir: ./dist/
-          server-dir: ./public_html/app/
+          server-dir: ./app/
           protocol: ftp
-          state-name: .deploy-state-v2
+          state-name: .deploy-state-v3
           log-level: verbose
 
       - name: Verificar deploy
@@ -73,16 +55,16 @@ jobs:
             exit 1
           fi
 
-      - name: Deploy API PHP → public_html/api/
+      - name: Deploy API PHP → api/
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.HOSTNAME }}
           username: ${{ secrets.FTPUSER }}
           password: ${{ secrets.FTPPASSWORD }}
           local-dir: ./api/
-          server-dir: ./public_html/api/
+          server-dir: ./api/
           protocol: ftp
-          state-name: .deploy-state-v2
+          state-name: .deploy-state-v3
           exclude: |
             **/.git*
             **/config/db.php

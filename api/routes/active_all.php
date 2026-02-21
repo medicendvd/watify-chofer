@@ -30,30 +30,50 @@ $result = [];
 foreach ($routes as $route) {
     $routeId = (int)$route['id'];
 
-    // Resumen financiero por método de pago
+    // Resumen financiero por método de pago (con garrafones)
     $byMethod = $pdo->prepare("
         SELECT pm.name AS method, pm.color, pm.icon,
-               SUM(t.total) AS total, COUNT(t.id) AS count
+               SUM(t.total) AS total,
+               COUNT(DISTINCT t.id) AS count,
+               COALESCE(SUM(ti.quantity), 0) AS garrafones
         FROM transactions t
         JOIN payment_methods pm ON pm.id = t.payment_method_id
+        LEFT JOIN transaction_items ti ON ti.transaction_id = t.id
         WHERE t.route_id = ?
         GROUP BY pm.id
-        ORDER BY total DESC
+        ORDER BY SUM(t.total) DESC
     ");
     $byMethod->execute([$routeId]);
-    $methods = $byMethod->fetchAll();
+    $methodsRaw = $byMethod->fetchAll();
+    $methods = array_map(fn($m) => [
+        'method'     => $m['method'],
+        'color'      => $m['color'],
+        'icon'       => $m['icon'],
+        'total'      => (float)$m['total'],
+        'count'      => (int)$m['count'],
+        'garrafones' => (int)$m['garrafones'],
+    ], $methodsRaw);
 
-    // Empresas a crédito
+    // Empresas a crédito (con garrafones)
     $byCompany = $pdo->prepare("
-        SELECT c.name AS company, SUM(t.total) AS total, COUNT(t.id) AS count
+        SELECT c.name AS company, SUM(t.total) AS total,
+               COUNT(DISTINCT t.id) AS count,
+               COALESCE(SUM(ti.quantity), 0) AS garrafones
         FROM transactions t
         JOIN companies c ON c.id = t.company_id
+        LEFT JOIN transaction_items ti ON ti.transaction_id = t.id
         WHERE t.route_id = ? AND t.company_id IS NOT NULL
         GROUP BY c.id
         ORDER BY c.name
     ");
     $byCompany->execute([$routeId]);
-    $companies = $byCompany->fetchAll();
+    $companiesRaw = $byCompany->fetchAll();
+    $companies = array_map(fn($c) => [
+        'company'    => $c['company'],
+        'total'      => (float)$c['total'],
+        'count'      => (int)$c['count'],
+        'garrafones' => (int)$c['garrafones'],
+    ], $companiesRaw);
     $totalNegocios = array_sum(array_column($companies, 'total'));
 
     // Productos vendidos (todos)
@@ -70,6 +90,51 @@ foreach ($routes as $route) {
     ");
     $productsStmt->execute([$routeId]);
     $products = $productsStmt->fetchAll();
+
+    // Transacciones individuales de la ruta
+    $txStmt = $pdo->prepare("
+        SELECT t.id, t.customer_name, t.total, t.transaction_date,
+               pm.name AS method, pm.color,
+               c.name AS company_name
+        FROM transactions t
+        JOIN payment_methods pm ON pm.id = t.payment_method_id
+        LEFT JOIN companies c ON c.id = t.company_id
+        WHERE t.route_id = ?
+        ORDER BY t.transaction_date ASC
+    ");
+    $txStmt->execute([$routeId]);
+    $txRows = $txStmt->fetchAll();
+
+    $txIds = array_column($txRows, 'id');
+    $txItems = [];
+    if (!empty($txIds)) {
+        $placeholders = implode(',', array_fill(0, count($txIds), '?'));
+        $itemStmt = $pdo->prepare("
+            SELECT ti.transaction_id, p.name AS product, ti.quantity
+            FROM transaction_items ti
+            JOIN products p ON p.id = ti.product_id
+            WHERE ti.transaction_id IN ($placeholders)
+            ORDER BY p.display_order
+        ");
+        $itemStmt->execute($txIds);
+        foreach ($itemStmt->fetchAll() as $item) {
+            $txItems[(int)$item['transaction_id']][] = [
+                'product'  => $item['product'],
+                'quantity' => (int)$item['quantity'],
+            ];
+        }
+    }
+
+    $transactions = array_map(fn($tx) => [
+        'id'            => (int)$tx['id'],
+        'customer_name' => $tx['customer_name'],
+        'company_name'  => $tx['company_name'],
+        'method'        => $tx['method'],
+        'color'         => $tx['color'],
+        'total'         => (float)$tx['total'],
+        'time'          => $tx['transaction_date'],
+        'items'         => $txItems[(int)$tx['id']] ?? [],
+    ], $txRows);
 
     // Garrafones vendidos
     $garrafStmt = $pdo->prepare("
@@ -104,6 +169,15 @@ foreach ($routes as $route) {
     $llenosARegr = max(0, $loaded - $recargas - $nuevos - $qLlenos);
     $vaciosARegr = max(0, $recargas - $qVacios);
 
+    // Facturas de garrafones registradas para esta ruta
+    $facturasStmt = $pdo->prepare('SELECT id, cantidad, cliente FROM route_facturas WHERE route_id = ? ORDER BY id ASC');
+    $facturasStmt->execute([$routeId]);
+    $facturas = array_map(fn($f) => [
+        'id'       => (int)$f['id'],
+        'cantidad' => (int)$f['cantidad'],
+        'cliente'  => $f['cliente'],
+    ], $facturasStmt->fetchAll());
+
     $result[] = [
         'route_id'      => $routeId,
         'chofer_id'     => (int)$route['user_id'],
@@ -118,9 +192,11 @@ foreach ($routes as $route) {
             'units'   => (int)$p['units'],
             'total'   => (float)$p['total'],
         ], $products),
-        'by_method'     => $methods,
-        'companies'     => $companies,
-        'total_negocios'=> (float)$totalNegocios,
+        'by_method'      => $methods,
+        'companies'      => $companies,
+        'total_negocios' => (float)$totalNegocios,
+        'transactions'   => $transactions,
+        'facturas'       => $facturas,
         'garrafones'    => [
             'cargados'          => $loaded,
             'recargas_vendidas' => $recargas,

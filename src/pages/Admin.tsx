@@ -189,7 +189,7 @@ export default function Admin() {
                   )}
                 </div>
               </div>
-              <ActiveRoutes routes={activeRoutes} lastUpdated={routesLastUpdated} />
+              <ActiveRoutes routes={activeRoutes} lastUpdated={routesLastUpdated} onRefresh={loadActiveRoutes} />
             </div>
 
             {/* Ventas del día por chofer */}

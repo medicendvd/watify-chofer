@@ -65,4 +65,10 @@ export const api = {
   // Broken garrafones
   registerBroken: (route_id: number, was_full: boolean, condition_type: string) =>
     request('/broken/index.php', { method: 'POST', body: JSON.stringify({ route_id, was_full, condition_type }) }),
+
+  // Facturas de garrafones
+  createFactura: (route_id: number, cantidad: number, cliente: string) =>
+    request('/routes/facturas.php', { method: 'POST', body: JSON.stringify({ route_id, cantidad, cliente }) }),
+  deleteFactura: (id: number) =>
+    request(`/routes/facturas.php?id=${id}`, { method: 'DELETE' }),
 };

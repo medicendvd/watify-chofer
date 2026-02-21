@@ -65,6 +65,16 @@ CREATE TABLE IF NOT EXISTS transactions (
   FOREIGN KEY (payment_method_id) REFERENCES payment_methods(id)
 );
 
+-- Facturas de garrafones de efectivo (split del corte de caja)
+CREATE TABLE IF NOT EXISTS route_facturas (
+  id         INT AUTO_INCREMENT PRIMARY KEY,
+  route_id   INT NOT NULL,
+  cantidad   INT NOT NULL,
+  cliente    VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (route_id) REFERENCES routes(id) ON DELETE CASCADE
+);
+
 -- Items de cada transacción
 CREATE TABLE IF NOT EXISTS transaction_items (
   id             INT AUTO_INCREMENT PRIMARY KEY,

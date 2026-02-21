@@ -87,6 +87,12 @@ export interface RouteSummary {
   garrafones: GarrafonStats;
 }
 
+export interface FacturaGarrafon {
+  id: number;
+  cantidad: number;
+  cliente: string;
+}
+
 export interface ActiveDriverRoute {
   route_id: number;
   chofer_id: number;
@@ -97,10 +103,21 @@ export interface ActiveDriverRoute {
   total_ventas: number;
   transaction_count: number;
   products: { product: string; units: number; total: number }[];
-  by_method: { method: string; color: string; icon: string; total: number; count: number }[];
-  companies: { company: string; total: number; count: number }[];
+  by_method: { method: string; color: string; icon: string; total: number; count: number; garrafones: number }[];
+  companies: { company: string; total: number; count: number; garrafones: number }[];
   total_negocios: number;
   garrafones: GarrafonStats;
+  facturas: FacturaGarrafon[];
+  transactions: {
+    id: number;
+    customer_name: string | null;
+    company_name: string | null;
+    method: string;
+    color: string;
+    total: number;
+    time: string;
+    items: { product: string; quantity: number }[];
+  }[];
 }
 
 export interface LiveSaleDetail {

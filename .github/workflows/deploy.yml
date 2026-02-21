@@ -39,19 +39,15 @@ jobs:
       - name: Verificar deploy
         run: |
           sleep 10
-          HTTP=$(curl -s -o /dev/null -w "%{http_code}" "https://watify.mx/app/version.txt")
-          echo "HTTP status version.txt: $HTTP"
-          if [ "$HTTP" = "200" ]; then
-            CONTENT=$(curl -s "https://watify.mx/app/version.txt")
-            echo "Contenido version.txt: $CONTENT"
-            if echo "$CONTENT" | grep -q "doctype"; then
-              echo "ERROR: version.txt retorna HTML (redireccion), el deploy NO llego al lugar correcto"
-              exit 1
-            else
-              echo "OK: version.txt es accesible correctamente"
-            fi
+          JS_FILE=$(grep -o 'assets/index-[^"]*\.js' dist/index.html | head -1)
+          echo "Archivo JS del build: $JS_FILE"
+          HTTP=$(curl -s -o /dev/null -w "%{http_code}" "https://watify.mx/app/$JS_FILE")
+          CTYPE=$(curl -s -o /dev/null -w "%{content_type}" "https://watify.mx/app/$JS_FILE")
+          echo "HTTP: $HTTP | Content-Type: $CTYPE"
+          if echo "$CTYPE" | grep -qi "javascript"; then
+            echo "OK: JS desplegado y accesible correctamente"
           else
-            echo "ERROR: version.txt retorno HTTP $HTTP"
+            echo "ERROR: JS no accesible (HTTP=$HTTP, Content-Type=$CTYPE)"
             exit 1
           fi
 

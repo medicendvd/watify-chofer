@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuthContext } from '../store/authContext';
 import { useCartStore } from '../store/cartStore';
 import { api } from '../lib/api';
@@ -47,6 +47,9 @@ export default function Chofer() {
   const [showResumen, setShowResumen]       = useState(false);
   const [submitting, setSubmitting]         = useState(false);
   const [error, setError]                   = useState('');
+  const [customerNameError, setCustomerNameError] = useState(false);
+
+  const customerNameRef = useRef<HTMLDivElement>(null);
 
   // Modales
   const [showBroken, setShowBroken]           = useState(false);
@@ -100,6 +103,12 @@ export default function Chofer() {
     if (items.length === 0) { setError('Agrega al menos un producto'); return; }
     if (selectedMethod.name === 'Negocios' && !selectedCompany) {
       setError('Selecciona la empresa'); return;
+    }
+    if ((selectedMethod.name === 'Link' || selectedMethod.name === 'Tarjeta') && !customerName.trim()) {
+      setCustomerNameError(true);
+      customerNameRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(() => setCustomerNameError(false), 500);
+      return;
     }
     setShowModal(true);
   };
@@ -159,33 +168,40 @@ export default function Chofer() {
   return (
     <div className="min-h-screen bg-gray-50 pb-8">
       {/* Header */}
-      <div className="bg-water-600 text-white px-4 pt-8 pb-5 shadow-md">
-        <div className="flex justify-between items-start">
-          <div>
-            <p className="capitalize text-sm text-water-100">{formatDate(today)}</p>
-            <h1 className="text-xl font-bold mt-0.5">Hola, {user?.name}</h1>
-          </div>
-          <button onClick={logout}
-            className="text-water-200 hover:text-white text-sm py-1.5 px-3 border border-water-400 rounded-lg transition-colors">
-            Salir
-          </button>
-        </div>
+      <div className="bg-water-600 text-white px-4 py-2 shadow-md flex justify-between items-center">
+        <p className="text-sm font-semibold capitalize">{user?.name}</p>
+        <button onClick={logout}
+          className="text-water-200 hover:text-white text-xs py-1 px-2.5 border border-water-400 rounded-lg transition-colors">
+          Salir
+        </button>
       </div>
 
       <div className="px-4 mt-5 space-y-5 max-w-md mx-auto">
 
         {/* Nombre del cliente */}
-        <div>
-          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+        <div ref={customerNameRef}>
+          <label className={`block text-xs font-semibold uppercase tracking-wide mb-1.5 ${customerNameError ? 'text-red-500' : 'text-gray-500'}`}>
             Nombre del cliente
+            {(selectedMethod.name === 'Link' || selectedMethod.name === 'Tarjeta') && (
+              <span className="ml-1 text-red-400">*</span>
+            )}
           </label>
           <input
             type="text"
             value={customerName}
-            onChange={e => setCustomerName(e.target.value)}
-            placeholder="Opcional"
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-water-400 text-sm"
+            onChange={e => { setCustomerName(e.target.value); setCustomerNameError(false); }}
+            placeholder={selectedMethod.name === 'Link' || selectedMethod.name === 'Tarjeta' ? 'Requerido' : 'Opcional'}
+            className={`w-full px-4 py-3 border rounded-xl text-gray-800 bg-white focus:outline-none text-sm transition-colors ${
+              customerNameError
+                ? 'border-red-400 ring-2 ring-red-300 animate-shake'
+                : 'border-gray-200 focus:ring-2 focus:ring-water-400'
+            }`}
           />
+          {customerNameError && (
+            <p className="text-xs text-red-500 mt-1.5 font-medium">
+              Se necesita llenar el nombre del cliente
+            </p>
+          )}
         </div>
 
         {/* Productos */}

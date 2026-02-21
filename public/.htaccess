@@ -5,6 +5,7 @@
   RewriteRule ^index\.html$ - [L]
   RewriteRule ^assets/ - [L]
   RewriteRule ^icons/ - [L]
+  RewriteRule \.(js|css|webmanifest|txt|json|png|jpg|svg|ico|woff2?)$ - [L]
   RewriteRule ^ /app/index.html [L]
 </IfModule>
 

@@ -92,4 +92,7 @@ export const api = {
     request('/routes/facturas.php', { method: 'POST', body: JSON.stringify({ route_id, cantidad, cliente }) }),
   deleteFactura: (id: number) =>
     request(`/routes/facturas.php?id=${id}`, { method: 'DELETE' }),
+
+  // Simpliroute map
+  getSimplirouteMap: () => request('/simpliroute/map.php'),
 };

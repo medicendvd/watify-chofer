@@ -192,6 +192,35 @@ export interface WeeklySummary {
   drivers: WeeklyDriverData[];
 }
 
+export interface SimplirouteVisit {
+  order: number;
+  title: string;
+  address: string;
+  lat: number;
+  lng: number;
+  status: 'pending' | 'completed' | 'failed' | 'partial';
+  checkout_lat: number | null;
+  checkout_lng: number | null;
+  checkout_time: string | null;
+}
+
+export interface SimplirouteRoute {
+  route_id: string;
+  vehicle_name: string;
+  driver_name: string;
+  driver_phone: string;
+  color: string;
+  total_visits: number;
+  completed: number;
+  last_position: { lat: number; lng: number } | null;
+  visits: SimplirouteVisit[];
+}
+
+export interface SimplirouteMapData {
+  routes: SimplirouteRoute[];
+  date: string;
+}
+
 export interface DashboardData {
   date: string;
   grand_total: number;

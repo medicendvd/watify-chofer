@@ -11,6 +11,8 @@
     "php": "php -S localhost:8888 -t api/"
   },
   "dependencies": {
+    "@types/leaflet": "^1.9.21",
+    "leaflet": "^1.9.4",
     "lucide-react": "^0.574.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

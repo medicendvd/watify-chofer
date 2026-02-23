@@ -128,9 +128,9 @@ export default function Admin() {
       <div className="bg-gradient-to-r from-water-400 to-water-500 px-4 pt-5 pb-5 shadow-md">
         <div className="flex justify-between items-center max-w-7xl mx-auto">
           <div>
-            <p className="capitalize text-xs text-white/70 mb-1">{formatDate(today)}</p>
-            <img src={logo} alt="Watify" className="h-8 brightness-0 invert drop-shadow" />
-            <p className="text-white/60 text-xs mt-0.5">Hola, {user?.name}</p>
+            <p className="capitalize text-xs mb-1" style={{ color: '#002eca' }}>{formatDate(today)}</p>
+            <img src={logo} alt="Watify" className="h-8 mix-blend-multiply" />
+            <p className="text-xs mt-0.5" style={{ color: '#002eca' }}>Hola, {user?.name}</p>
           </div>
           <div className="flex gap-2">
             <Link

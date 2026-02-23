@@ -6,8 +6,14 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     headers: { 'Content-Type': 'application/json', ...(options?.headers ?? {}) },
     ...options,
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error ?? 'Error de servidor');
+  const text = await res.text();
+  let data: unknown;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new Error(`Respuesta no-JSON del servidor [${res.status}]: ${text.slice(0, 300)}`);
+  }
+  if (!res.ok) throw new Error((data as { error?: string }).error ?? 'Error de servidor');
   return data as T;
 }
 

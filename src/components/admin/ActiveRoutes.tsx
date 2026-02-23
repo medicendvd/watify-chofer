@@ -331,11 +331,11 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
           </p>
           <div className="grid grid-cols-3 gap-2 text-center mb-3">
             <div className="bg-white rounded-xl py-2 px-1 shadow-sm">
-              <p className={`text-xl font-bold ${muted ? 'text-gray-600' : 'text-water-500'}`}>{g.cargados}</p>
+              <p className="text-xl font-bold" style={{ color: muted ? '#9ca3af' : '#002eca' }}>{g.cargados}</p>
               <p className="text-xs text-gray-400 mt-0.5">Cargados</p>
             </div>
             <div className="bg-white rounded-xl py-2 px-1 shadow-sm">
-              <p className={`text-xl font-bold ${muted ? 'text-gray-600' : 'text-water-500'}`}>{g.recargas_vendidas + g.nuevos_vendidos}</p>
+              <p className="text-xl font-bold" style={{ color: muted ? '#9ca3af' : '#002eca' }}>{g.recargas_vendidas + g.nuevos_vendidos}</p>
               <p className="text-xs text-gray-400 mt-0.5">Vendidos</p>
             </div>
             <div className="bg-white rounded-xl py-2 px-1 shadow-sm">

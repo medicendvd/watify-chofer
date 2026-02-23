@@ -1,12 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuthContext } from '../store/authContext';
 import { api } from '../lib/api';
-import type { DashboardData, ActiveDriverRoute } from '../types';
+import type { DashboardData, ActiveDriverRoute, LinkPayment } from '../types';
 import { Link } from 'react-router-dom';
 import SummaryCards from '../components/admin/SummaryCards';
 import DriverSummary from '../components/admin/DriverSummary';
 import PerformanceCharts from '../components/admin/PerformanceCharts';
 import ActiveRoutes from '../components/admin/ActiveRoutes';
+import LinkPaymentsPanel from '../components/admin/LinkPaymentsPanel';
+import PaymentsTab from '../components/admin/PaymentsTab';
 
 const REFRESH_INTERVAL_MS = 10 * 60 * 1000; // 10 minutos
 
@@ -19,7 +21,17 @@ export default function Admin() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [tab, setTab] = useState<'resumen' | 'choferes' | 'graficas'>('resumen');
+  const [tab, setTab] = useState<'resumen' | 'choferes' | 'graficas' | 'pagos'>('resumen');
+
+  // Pagos por Link
+  const [linkPayments, setLinkPayments] = useState<LinkPayment[]>([]);
+
+  const loadLinkPayments = useCallback(async () => {
+    try {
+      const data = await api.getLinkPayments() as LinkPayment[];
+      setLinkPayments(data);
+    } catch { /* silencioso */ }
+  }, []);
 
   // Rutas activas + finalizadas hoy (en vivo)
   const [activeRoutes, setActiveRoutes] = useState<ActiveDriverRoute[]>([]);
@@ -59,7 +71,8 @@ export default function Admin() {
   useEffect(() => {
     loadDashboard();
     loadActiveRoutes();
-  }, [loadActiveRoutes]);
+    loadLinkPayments();
+  }, [loadActiveRoutes, loadLinkPayments]);
 
   // Auto-refresh todo cada 10 min
   useEffect(() => {
@@ -78,8 +91,9 @@ export default function Admin() {
     return () => clearInterval(tick);
   }, [routesLastUpdated]);
 
-  const minutesLeft = Math.ceil(nextRefreshIn / 60_000);
-  const activeCount = activeRoutes.filter(r => r.status === 'active').length;
+  const minutesLeft   = Math.ceil(nextRefreshIn / 60_000);
+  const activeCount   = activeRoutes.filter(r => r.status === 'active').length;
+  const pendingLinks  = linkPayments.filter(p => !p.paid_at).length;
 
   return (
     <div className="min-h-screen bg-gray-50 pb-8">
@@ -122,6 +136,7 @@ export default function Admin() {
             { key: 'resumen',  label: 'Resumen' },
             { key: 'choferes', label: 'Choferes' },
             { key: 'graficas', label: 'Gráficas' },
+            { key: 'pagos',    label: 'Pagos' },
           ] as const).map((t) => (
             <button
               key={t.key}
@@ -138,10 +153,18 @@ export default function Admin() {
                   {activeCount}
                 </span>
               )}
+              {t.key === 'pagos' && pendingLinks > 0 && (
+                <span className="ml-1.5 inline-flex items-center justify-center w-4 h-4 text-xs bg-orange-500 text-white rounded-full">
+                  {pendingLinks}
+                </span>
+              )}
             </button>
           ))}
         </div>
       </div>
+
+      {/* Panel flotante de cobros Link (solo desktop) */}
+      <LinkPaymentsPanel payments={linkPayments} onRefresh={loadLinkPayments} />
 
       {/* Contenido */}
       <div className="px-4 mt-5 max-w-7xl mx-auto">
@@ -161,6 +184,10 @@ export default function Admin() {
             {tab === 'resumen'  && <SummaryCards data={data} />}
             {tab === 'graficas' && <PerformanceCharts data={data} />}
           </>
+        )}
+
+        {tab === 'pagos' && (
+          <PaymentsTab payments={linkPayments} onRefresh={loadLinkPayments} />
         )}
 
         {/* Tab Choferes */}

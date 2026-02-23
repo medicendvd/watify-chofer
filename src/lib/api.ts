@@ -66,6 +66,14 @@ export const api = {
   registerBroken: (route_id: number, was_full: boolean, condition_type: string) =>
     request('/broken/index.php', { method: 'POST', body: JSON.stringify({ route_id, was_full, condition_type }) }),
 
+  // Stripe sync
+  getStripeMatches: () => request('/stripe/sync.php'),
+
+  // Pagos por Link
+  getLinkPayments: () => request('/link-payments/index.php'),
+  markLinkPaymentPaid: (transaction_id: number) =>
+    request('/link-payments/mark.php', { method: 'POST', body: JSON.stringify({ transaction_id }) }),
+
   // Facturas de garrafones
   createFactura: (route_id: number, cantidad: number, cliente: string) =>
     request('/routes/facturas.php', { method: 'POST', body: JSON.stringify({ route_id, cantidad, cliente }) }),

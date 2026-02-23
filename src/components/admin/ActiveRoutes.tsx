@@ -2,6 +2,104 @@ import { useState } from 'react';
 import type { ActiveDriverRoute, FacturaGarrafon } from '../../types';
 import { api } from '../../lib/api';
 
+// ── Tipos internos ──────────────────────────────────────────────────────────
+type AdminTx = ActiveDriverRoute['transactions'][number];
+type EditItem = { product_id: number; product: string; quantity: number; unit_price: number };
+
+// ── Modal de edición de venta ───────────────────────────────────────────────
+function EditTxModal({ tx, onSave, onClose }: {
+  tx: AdminTx;
+  onSave: () => void;
+  onClose: () => void;
+}) {
+  const [items, setItems] = useState<EditItem[]>(tx.items.map(i => ({ ...i })));
+  const [saving, setSaving] = useState(false);
+
+  const adjust = (productId: number, delta: number) =>
+    setItems(prev => prev.map(i =>
+      i.product_id === productId ? { ...i, quantity: Math.max(0, i.quantity + delta) } : i
+    ));
+
+  const handleSave = async () => {
+    const validItems = items.filter(i => i.quantity > 0);
+    if (validItems.length === 0) return;
+    setSaving(true);
+    try {
+      await api.updateTransaction(tx.id, {
+        customer_name: tx.customer_name,
+        company_id: tx.company_id,
+        payment_method_id: tx.payment_method_id,
+        items: validItems.map(i => ({
+          product_id: i.product_id,
+          quantity: i.quantity,
+          unit_price: i.unit_price,
+        })),
+      });
+      onSave();
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : 'Error al guardar');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const total = items.reduce((s, i) => s + i.unit_price * i.quantity, 0);
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4">
+      <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden">
+        <div className="px-5 pt-5 pb-4 border-b border-gray-100">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: tx.color }}>
+              {tx.method}
+            </span>
+            <p className="font-bold text-gray-900 text-sm truncate">
+              {tx.customer_name ?? tx.company_name ?? 'Sin nombre'}
+            </p>
+          </div>
+          <p className="text-xs text-gray-400 mt-0.5">Venta #{tx.id}</p>
+        </div>
+        <div className="px-5 py-4 space-y-3">
+          {items.map(i => (
+            <div key={i.product_id} className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-800">{i.product}</p>
+                <p className="text-xs text-gray-400">${i.unit_price.toFixed(0)} c/u</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <button onClick={() => adjust(i.product_id, -1)} disabled={i.quantity === 0}
+                  className="w-8 h-8 rounded-full bg-gray-100 text-gray-600 font-bold text-lg disabled:opacity-30 flex items-center justify-center">
+                  −
+                </button>
+                <span className={`w-6 text-center font-bold text-base ${i.quantity === 0 ? 'text-gray-300' : 'text-gray-900'}`}>
+                  {i.quantity}
+                </span>
+                <button onClick={() => adjust(i.product_id, 1)}
+                  className="w-8 h-8 rounded-full bg-gray-100 text-gray-600 font-bold text-lg flex items-center justify-center">
+                  +
+                </button>
+              </div>
+            </div>
+          ))}
+          <div className="border-t border-gray-100 pt-3 flex justify-between">
+            <span className="text-sm font-semibold text-gray-500">Total</span>
+            <span className="text-sm font-bold text-gray-900">${total.toLocaleString('es-MX', { minimumFractionDigits: 0 })}</span>
+          </div>
+        </div>
+        <div className="px-5 pb-5 flex gap-3">
+          <button onClick={onClose} className="flex-1 py-3 border border-gray-200 rounded-2xl text-sm text-gray-500">
+            Cancelar
+          </button>
+          <button onClick={handleSave} disabled={saving || items.every(i => i.quantity === 0)}
+            className="flex-1 py-3 bg-water-600 text-white rounded-2xl text-sm font-semibold disabled:opacity-50">
+            {saving ? 'Guardando...' : 'Guardar'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 interface Props {
   routes: ActiveDriverRoute[];
   lastUpdated: Date | null;
@@ -171,6 +269,7 @@ interface RouteCardProps {
 
 function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCardProps) {
   const [facturarOpen, setFacturarOpen] = useState(false);
+  const [editingTx, setEditingTx] = useState<AdminTx | null>(null);
 
   const efectivo = route.by_method.find(m => m.method === 'Efectivo');
   const otrosMethods = route.by_method.filter(m => m.method !== 'Efectivo' && m.method !== 'Negocios');
@@ -343,6 +442,26 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
                   ))}
                 </div>
               )}
+
+              {/* Transacciones individuales de efectivo */}
+              {route.transactions.filter(tx => tx.method === 'Efectivo').length > 0 && (
+                <div className="mt-3 pt-3 border-t border-green-200 space-y-1">
+                  {route.transactions.filter(tx => tx.method === 'Efectivo').map(tx => (
+                    <div key={tx.id} className="flex items-center justify-between text-xs">
+                      <span className="text-green-700">
+                        {tx.items.map(i => `${i.product} ×${i.quantity}`).join(', ')}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-green-800">${tx.total.toFixed(0)}</span>
+                        <button onClick={() => setEditingTx(tx)}
+                          className="text-gray-400 hover:text-gray-600 px-1">
+                          ✏️
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Botón Facturar */}
@@ -363,6 +482,15 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
             facturas={facturas}
             onClose={() => setFacturarOpen(false)}
             onRefresh={() => { onRefresh?.(); }}
+          />
+        )}
+
+        {/* Modal edición de venta */}
+        {editingTx && (
+          <EditTxModal
+            tx={editingTx}
+            onSave={() => { setEditingTx(null); onRefresh?.(); }}
+            onClose={() => setEditingTx(null)}
           />
         )}
 
@@ -393,14 +521,18 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
                       {methodTxs.map(tx => {
                         const garrafones = tx.items.reduce((s, i) => s + i.quantity, 0);
                         return (
-                          <div key={tx.id} className="px-3 py-2 flex justify-between items-center">
-                            <div>
-                              <p className="text-sm text-gray-700">{tx.customer_name || '—'}</p>
+                          <div key={tx.id} className="px-3 py-2 flex justify-between items-center gap-2">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm text-gray-700 truncate">{tx.customer_name || '—'}</p>
                               <p className="text-xs text-gray-400">{garrafones} garr</p>
                             </div>
-                            <span className="text-sm font-semibold text-gray-900">
+                            <span className="text-sm font-semibold text-gray-900 shrink-0">
                               ${Number(tx.total).toFixed(0)}
                             </span>
+                            <button onClick={() => setEditingTx(tx)}
+                              className="text-gray-400 hover:text-gray-600 shrink-0 px-1">
+                              ✏️
+                            </button>
                           </div>
                         );
                       })}
@@ -419,17 +551,31 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
               🏢 Empresas a crédito
             </p>
             <div className="space-y-1.5">
-              {route.companies.map(c => (
-                <div key={c.company} className="flex justify-between items-center text-sm">
-                  <div>
-                    <span className="text-gray-700">{c.company}</span>
-                    <span className="text-xs text-gray-400 ml-1.5">· {c.garrafones} garr</span>
+              {route.companies.map(c => {
+                const companyTxs = route.transactions.filter(tx => tx.company_name === c.company);
+                return (
+                  <div key={c.company}>
+                    <div className="flex justify-between items-center text-sm">
+                      <div>
+                        <span className="text-gray-700">{c.company}</span>
+                        <span className="text-xs text-gray-400 ml-1.5">· {c.garrafones} garr</span>
+                      </div>
+                      <span className="font-semibold text-gray-900">
+                        ${Number(c.total).toLocaleString('es-MX', { minimumFractionDigits: 0 })}
+                      </span>
+                    </div>
+                    {companyTxs.map(tx => (
+                      <div key={tx.id} className="flex items-center justify-between mt-1 pl-2 text-xs text-gray-500">
+                        <span>{tx.items.map(i => `${i.product} ×${i.quantity}`).join(', ')}</span>
+                        <button onClick={() => setEditingTx(tx)}
+                          className="text-gray-400 hover:text-gray-600 ml-2 px-1">
+                          ✏️
+                        </button>
+                      </div>
+                    ))}
                   </div>
-                  <span className="font-semibold text-gray-900">
-                    ${Number(c.total).toLocaleString('es-MX', { minimumFractionDigits: 0 })}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
             <div className="border-t border-purple-200 mt-2 pt-2 flex justify-between">
               <span className="text-xs font-semibold text-purple-700">Total crédito</span>

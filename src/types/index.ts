@@ -87,6 +87,32 @@ export interface RouteSummary {
   garrafones: GarrafonStats;
 }
 
+export interface StripeMatch {
+  stripe_session_id: string;
+  stripe_name: string;
+  stripe_email: string | null;
+  stripe_amount: number;
+  stripe_date: string;
+  match: {
+    transaction_id: number;
+    customer_name: string;
+    garrafones: number;
+    total: number;
+    delivery_date: string;
+    score: number;
+  } | null;
+}
+
+export interface LinkPayment {
+  transaction_id: number;
+  customer_name: string | null;
+  garrafones: number;
+  total: number;
+  delivery_date: string;
+  paid_at: string | null;
+  paid_by_name: string | null;
+}
+
 export interface FacturaGarrafon {
   id: number;
   cantidad: number;
@@ -112,11 +138,13 @@ export interface ActiveDriverRoute {
     id: number;
     customer_name: string | null;
     company_name: string | null;
+    company_id: number | null;
+    payment_method_id: number;
     method: string;
     color: string;
     total: number;
     time: string;
-    items: { product: string; quantity: number }[];
+    items: { product_id: number; unit_price: number; product: string; quantity: number }[];
   }[];
 }
 

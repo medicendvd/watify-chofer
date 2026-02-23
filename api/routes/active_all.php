@@ -94,6 +94,7 @@ foreach ($routes as $route) {
     // Transacciones individuales de la ruta
     $txStmt = $pdo->prepare("
         SELECT t.id, t.customer_name, t.total, t.transaction_date,
+               t.payment_method_id, t.company_id,
                pm.name AS method, pm.color,
                c.name AS company_name
         FROM transactions t
@@ -110,7 +111,8 @@ foreach ($routes as $route) {
     if (!empty($txIds)) {
         $placeholders = implode(',', array_fill(0, count($txIds), '?'));
         $itemStmt = $pdo->prepare("
-            SELECT ti.transaction_id, p.name AS product, ti.quantity
+            SELECT ti.transaction_id, ti.product_id, ti.unit_price,
+                   p.name AS product, ti.quantity
             FROM transaction_items ti
             JOIN products p ON p.id = ti.product_id
             WHERE ti.transaction_id IN ($placeholders)
@@ -119,21 +121,25 @@ foreach ($routes as $route) {
         $itemStmt->execute($txIds);
         foreach ($itemStmt->fetchAll() as $item) {
             $txItems[(int)$item['transaction_id']][] = [
-                'product'  => $item['product'],
-                'quantity' => (int)$item['quantity'],
+                'product_id' => (int)$item['product_id'],
+                'unit_price' => (float)$item['unit_price'],
+                'product'    => $item['product'],
+                'quantity'   => (int)$item['quantity'],
             ];
         }
     }
 
     $transactions = array_map(fn($tx) => [
-        'id'            => (int)$tx['id'],
-        'customer_name' => $tx['customer_name'],
-        'company_name'  => $tx['company_name'],
-        'method'        => $tx['method'],
-        'color'         => $tx['color'],
-        'total'         => (float)$tx['total'],
-        'time'          => $tx['transaction_date'],
-        'items'         => $txItems[(int)$tx['id']] ?? [],
+        'id'                => (int)$tx['id'],
+        'customer_name'     => $tx['customer_name'],
+        'company_name'      => $tx['company_name'],
+        'company_id'        => $tx['company_id'] ? (int)$tx['company_id'] : null,
+        'payment_method_id' => (int)$tx['payment_method_id'],
+        'method'            => $tx['method'],
+        'color'             => $tx['color'],
+        'total'             => (float)$tx['total'],
+        'time'              => $tx['transaction_date'],
+        'items'             => $txItems[(int)$tx['id']] ?? [],
     ], $txRows);
 
     // Garrafones vendidos

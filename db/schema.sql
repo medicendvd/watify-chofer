@@ -65,6 +65,16 @@ CREATE TABLE IF NOT EXISTS transactions (
   FOREIGN KEY (payment_method_id) REFERENCES payment_methods(id)
 );
 
+-- Registro de pagos recibidos por Link
+CREATE TABLE IF NOT EXISTS link_payments (
+  id             INT AUTO_INCREMENT PRIMARY KEY,
+  transaction_id INT NOT NULL UNIQUE,
+  paid_at        TIMESTAMP NULL DEFAULT NULL,
+  paid_by        INT NULL,
+  FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE CASCADE,
+  FOREIGN KEY (paid_by) REFERENCES users(id)
+);
+
 -- Facturas de garrafones de efectivo (split del corte de caja)
 CREATE TABLE IF NOT EXISTS route_facturas (
   id         INT AUTO_INCREMENT PRIMARY KEY,

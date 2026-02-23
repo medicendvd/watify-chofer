@@ -6,58 +6,69 @@ require_once '../utils/auth_check.php';
 requireAuth(['Admin', 'Visor']);
 
 $token = 'a8be0c30758b3b22809f3d4365e3cb13522e34af';
-$date  = date('Y-m-d', strtotime('now', mktime(0, 0, 0, (int)date('n'), (int)date('j'), (int)date('Y'))));
+$date  = date('Y-m-d');
 
 function sr_get(string $url, string $token): ?array {
     $ch = curl_init($url);
     curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT        => 10,
-        CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_HTTPHEADER     => ["Authorization: Token {$token}", "Content-Type: application/json"],
+        CURLOPT_RETURNTRANSFER  => true,
+        CURLOPT_TIMEOUT         => 15,
+        CURLOPT_FOLLOWLOCATION  => true,
+        CURLOPT_SSL_VERIFYPEER  => false,   // compatibilidad Hostinger
+        CURLOPT_SSL_VERIFYHOST  => 0,
+        CURLOPT_HTTPHEADER      => [
+            "Authorization: Token {$token}",
+            "Content-Type: application/json",
+        ],
     ]);
-    $body = curl_exec($ch);
-    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $body  = curl_exec($ch);
+    $code  = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $error = curl_error($ch);
     curl_close($ch);
-    if ($code !== 200 || !$body) return null;
-    return json_decode($body, true);
+
+    if ($error || $code !== 200 || !$body) return null;
+    $decoded = json_decode($body, true);
+    return is_array($decoded) ? $decoded : null;
 }
 
-// 1. Today's vehicles with planned routes
+// 1. Vehículos con rutas hoy
 $vehicles = sr_get("https://api.simpliroute.com/v1/plans/{$date}/vehicles/", $token);
 if (empty($vehicles)) {
     json_response(['routes' => [], 'date' => $date]);
+    exit;
 }
 
-// 2. All visits for today
+// 2. Todas las visitas del día
 $allVisits = sr_get("https://api.simpliroute.com/v1/routes/visits/?planned_date={$date}", $token) ?? [];
 
-// Group visits by route_id
+// Agrupar visitas por route_id
 $visitsByRoute = [];
 foreach ($allVisits as $v) {
-    $rid = $v['route'];
+    $rid = $v['route'] ?? null;
+    if (!$rid) continue;
     $visitsByRoute[$rid][] = [
-        'order'        => (int)$v['order'],
-        'title'        => $v['title'] ?? '',
+        'order'        => (int)($v['order'] ?? 0),
+        'title'        => $v['title']   ?? '',
         'address'      => $v['address'] ?? '',
-        'lat'          => (float)$v['latitude'],
-        'lng'          => (float)$v['longitude'],
-        'status'       => $v['status'] ?? 'pending',
-        'checkout_lat' => $v['checkout_latitude']  ? (float)$v['checkout_latitude']  : null,
-        'checkout_lng' => $v['checkout_longitude'] ? (float)$v['checkout_longitude'] : null,
+        'lat'          => (float)($v['latitude']  ?? 0),
+        'lng'          => (float)($v['longitude'] ?? 0),
+        'status'       => $v['status']  ?? 'pending',
+        'checkout_lat' => isset($v['checkout_latitude'])  && $v['checkout_latitude']  !== null ? (float)$v['checkout_latitude']  : null,
+        'checkout_lng' => isset($v['checkout_longitude']) && $v['checkout_longitude'] !== null ? (float)$v['checkout_longitude'] : null,
         'checkout_time'=> $v['checkout_time'] ?? null,
     ];
 }
 
-// 3. Build output
+// 3. Construir salida
 $routes = [];
 foreach ($vehicles as $vehicle) {
-    foreach ($vehicle['routes'] as $routeRef) {
+    $vehicleRoutes = $vehicle['routes'] ?? [];
+    foreach ($vehicleRoutes as $routeRef) {
         $rid    = $routeRef['id'];
         $visits = $visitsByRoute[$rid] ?? [];
         usort($visits, fn($a, $b) => $a['order'] - $b['order']);
 
-        // Last known position = most recent checkout coordinates
+        // Última posición conocida = último checkout con coordenadas
         $lastPos = null;
         foreach (array_reverse($visits) as $vv) {
             if ($vv['checkout_lat'] && $vv['checkout_lng']) {
@@ -69,15 +80,15 @@ foreach ($vehicles as $vehicle) {
         $completedCount = count(array_filter($visits, fn($vv) => $vv['status'] === 'completed'));
 
         $routes[] = [
-            'route_id'       => $rid,
-            'vehicle_name'   => $vehicle['name'] ?? '',
-            'driver_name'    => $vehicle['driver']['name'] ?? '',
-            'driver_phone'   => $vehicle['driver']['phone'] ?? '',
-            'color'          => $vehicle['color'] ?? '#1a2fa8',
-            'total_visits'   => count($visits),
-            'completed'      => $completedCount,
-            'last_position'  => $lastPos,
-            'visits'         => $visits,
+            'route_id'      => $rid,
+            'vehicle_name'  => $vehicle['name']             ?? '',
+            'driver_name'   => $vehicle['driver']['name']   ?? '',
+            'driver_phone'  => $vehicle['driver']['phone']  ?? '',
+            'color'         => $vehicle['color']            ?? '#1a2fa8',
+            'total_visits'  => count($visits),
+            'completed'     => $completedCount,
+            'last_position' => $lastPos,
+            'visits'        => $visits,
         ];
     }
 }

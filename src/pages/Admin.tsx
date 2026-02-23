@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import logo from '../assets/logo.png';
 import { useAuthContext } from '../store/authContext';
 import { api } from '../lib/api';
 import type { DashboardData, ActiveDriverRoute, LinkPayment } from '../types';
@@ -128,12 +129,7 @@ export default function Admin() {
         <div className="flex justify-between items-center max-w-7xl mx-auto">
           <div>
             <p className="capitalize text-xs text-white/70 mb-1">{formatDate(today)}</p>
-            <div className="flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 text-white drop-shadow" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 2C8.5 7 5 10.5 5 14a7 7 0 0014 0c0-3.5-3.5-7-7-12z" />
-              </svg>
-              <h1 className="text-2xl font-black tracking-widest text-white drop-shadow">WATIFY</h1>
-            </div>
+            <img src={logo} alt="Watify" className="h-8 brightness-0 invert drop-shadow" />
             <p className="text-white/60 text-xs mt-0.5">Hola, {user?.name}</p>
           </div>
           <div className="flex gap-2">

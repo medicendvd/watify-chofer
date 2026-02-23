@@ -1,4 +1,9 @@
 <?php
+// Suprimir errores/avisos que corrompan el JSON en producción
+ini_set('display_errors', '0');
+error_reporting(0);
+ob_start(); // capturar cualquier salida espuria antes del JSON
+
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../utils/response.php';
 require_once __DIR__ . '/../utils/auth_check.php';
@@ -46,18 +51,23 @@ if (isset($response['error'])) {
 $sessions = $response['data'] ?? [];
 
 // ── Pagos pendientes de Link en nuestra BD ───────────────────────────────────
-$pdo     = getDB();
-$pending = $pdo->query("
-    SELECT t.id AS transaction_id, t.customer_name, t.total,
-           COALESCE(SUM(ti.quantity), 0) AS garrafones,
-           t.transaction_date AS delivery_date
-    FROM transactions t
-    JOIN payment_methods pm ON pm.id = t.payment_method_id AND pm.name = 'Link'
-    LEFT JOIN transaction_items ti ON ti.transaction_id = t.id
-    LEFT JOIN link_payments lp ON lp.transaction_id = t.id
-    WHERE lp.paid_at IS NULL
-    GROUP BY t.id
-")->fetchAll();
+$pdo = getDB();
+try {
+    $pending = $pdo->query("
+        SELECT t.id AS transaction_id, t.customer_name, t.total,
+               COALESCE(SUM(ti.quantity), 0) AS garrafones,
+               t.transaction_date AS delivery_date
+        FROM transactions t
+        JOIN payment_methods pm ON pm.id = t.payment_method_id AND pm.name = 'Link'
+        LEFT JOIN transaction_items ti ON ti.transaction_id = t.id
+        LEFT JOIN link_payments lp ON lp.transaction_id = t.id
+        WHERE lp.paid_at IS NULL
+        GROUP BY t.id
+    ")->fetchAll();
+} catch (\PDOException $e) {
+    ob_end_clean();
+    jsonError('Tabla link_payments no encontrada. Créala en la BD: ' . $e->getMessage(), 500);
+}
 
 // ── Función de similitud de nombres ─────────────────────────────────────────
 function nameSimilarity(string $a, string $b): float {
@@ -118,4 +128,5 @@ usort($matches, fn($a, $b) =>
     ($b['match']['score'] ?? 0) <=> ($a['match']['score'] ?? 0)
 );
 
+ob_end_clean();
 jsonResponse($matches);

@@ -59,6 +59,13 @@ export const api = {
     return request(`/dashboard/index.php${params}`);
   },
 
+  // Weekly summary
+  getWeeklySummary: () => request('/dashboard/weekly.php'),
+  confirmWeeklyDay: (chofer_id: number, date: string) =>
+    request('/dashboard/confirm.php', { method: 'POST', body: JSON.stringify({ chofer_id, date }) }),
+  createIncident: (chofer_id: number, description: string, amount: number) =>
+    request('/dashboard/incidents.php', { method: 'POST', body: JSON.stringify({ chofer_id, description, amount }) }),
+
   // Routes
   getActiveRoute: () => request('/routes/index.php'),
   getActiveRoutes: () => request('/routes/active_all.php'),

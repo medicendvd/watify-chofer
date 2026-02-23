@@ -9,6 +9,9 @@ import PerformanceCharts from '../components/admin/PerformanceCharts';
 import ActiveRoutes from '../components/admin/ActiveRoutes';
 import LinkPaymentsPanel from '../components/admin/LinkPaymentsPanel';
 import PaymentsTab from '../components/admin/PaymentsTab';
+import WeeklyTable from '../components/admin/WeeklyTable';
+import IncidentModal from '../components/admin/IncidentModal';
+import type { WeeklySummary } from '../types';
 
 const REFRESH_INTERVAL_MS = 10 * 60 * 1000; // 10 minutos
 
@@ -21,7 +24,28 @@ export default function Admin() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [tab, setTab] = useState<'resumen' | 'choferes' | 'graficas' | 'pagos'>('resumen');
+  const [tab, setTab] = useState<'resumen' | 'choferes' | 'graficas' | 'pagos'>('choferes');
+
+  // Resumen semanal
+  const [weekly, setWeekly] = useState<WeeklySummary | null>(null);
+  const [showIncidentModal, setShowIncidentModal] = useState(false);
+
+  const loadWeekly = useCallback(async () => {
+    try {
+      const w = await api.getWeeklySummary() as WeeklySummary;
+      setWeekly(w);
+    } catch { /* silencioso */ }
+  }, []);
+
+  const handleConfirmDay = async (choferId: number, date: string) => {
+    await api.confirmWeeklyDay(choferId, date);
+    await loadWeekly();
+  };
+
+  const handleCreateIncident = async (data: { choferId: number; description: string; amount: number }) => {
+    await api.createIncident(data.choferId, data.description, data.amount);
+    await loadWeekly();
+  };
 
   // Pagos por Link
   const [linkPayments, setLinkPayments] = useState<LinkPayment[]>([]);
@@ -72,7 +96,8 @@ export default function Admin() {
     loadDashboard();
     loadActiveRoutes();
     loadLinkPayments();
-  }, [loadActiveRoutes, loadLinkPayments]);
+    loadWeekly();
+  }, [loadActiveRoutes, loadLinkPayments, loadWeekly]);
 
   // Auto-refresh todo cada 10 min
   useEffect(() => {
@@ -99,29 +124,34 @@ export default function Admin() {
     <div className="min-h-screen bg-gray-50 pb-8">
 
       {/* Header */}
-      <div className="bg-water-700 text-white px-4 pt-8 pb-5 shadow-md">
-        <div className="flex justify-between items-start max-w-7xl mx-auto">
+      <div className="bg-gradient-to-r from-water-400 to-water-500 px-4 pt-5 pb-5 shadow-md">
+        <div className="flex justify-between items-center max-w-7xl mx-auto">
           <div>
-            <p className="capitalize text-sm text-water-200">{formatDate(today)}</p>
-            <h1 className="text-xl font-bold mt-0.5">Dashboard Admin</h1>
-            <p className="text-water-300 text-xs">Hola, {user?.name}</p>
+            <p className="capitalize text-xs text-white/70 mb-1">{formatDate(today)}</p>
+            <div className="flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 text-white drop-shadow" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 2C8.5 7 5 10.5 5 14a7 7 0 0014 0c0-3.5-3.5-7-7-12z" />
+              </svg>
+              <h1 className="text-2xl font-black tracking-widest text-white drop-shadow">WATIFY</h1>
+            </div>
+            <p className="text-white/60 text-xs mt-0.5">Hola, {user?.name}</p>
           </div>
           <div className="flex gap-2">
             <Link
               to="/live"
-              className="text-water-200 hover:text-white text-sm font-medium py-1.5 px-3 border border-water-500 rounded-lg transition-colors"
+              className="bg-[#1a2fa8] hover:bg-[#1626a0] text-white text-xs font-semibold py-2 px-3.5 rounded-xl transition-colors shadow-sm"
             >
-              🖥️ En vivo
+              En vivo
             </Link>
             <button
               onClick={() => { loadDashboard(); loadActiveRoutes(); }}
-              className="text-water-200 hover:text-white text-sm py-1.5 px-3 border border-water-500 rounded-lg transition-colors"
+              className="bg-[#1a2fa8] hover:bg-[#1626a0] text-white text-xs font-semibold py-2 px-3.5 rounded-xl transition-colors shadow-sm"
             >
               Actualizar
             </button>
             <button
               onClick={logout}
-              className="text-water-200 hover:text-white text-sm py-1.5 px-3 border border-water-500 rounded-lg transition-colors"
+              className="bg-[#1a2fa8] hover:bg-[#1626a0] text-white text-xs font-semibold py-2 px-3.5 rounded-xl transition-colors shadow-sm"
             >
               Salir
             </button>
@@ -133,8 +163,8 @@ export default function Admin() {
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
         <div className="flex max-w-7xl mx-auto">
           {([
-            { key: 'resumen',  label: 'Resumen' },
             { key: 'choferes', label: 'Choferes' },
+            { key: 'resumen',  label: 'Resumen' },
             { key: 'graficas', label: 'Gráficas' },
             { key: 'pagos',    label: 'Pagos' },
           ] as const).map((t) => (
@@ -143,7 +173,7 @@ export default function Admin() {
               onClick={() => setTab(t.key)}
               className={`flex-1 lg:flex-none lg:px-8 py-3.5 text-sm font-semibold border-b-2 transition-colors ${
                 tab === t.key
-                  ? 'border-water-500 text-water-700'
+                  ? 'border-water-500 text-water-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
@@ -172,7 +202,7 @@ export default function Admin() {
         {/* Loading / Error para resumen y gráficas */}
         {loading && tab !== 'choferes' && (
           <div className="flex items-center justify-center py-16">
-            <div className="animate-spin rounded-full h-10 w-10 border-4 border-water-400 border-t-transparent" />
+            <div className="animate-spin rounded-full h-10 w-10 border-4 border-water-500 border-t-transparent" />
           </div>
         )}
         {error && tab !== 'choferes' && (
@@ -181,7 +211,46 @@ export default function Admin() {
 
         {!loading && !error && data && (
           <>
-            {tab === 'resumen'  && <SummaryCards data={data} />}
+            {tab === 'resumen'  && (
+              <div className="space-y-6">
+                <SummaryCards data={data} />
+                {weekly && weekly.drivers.length > 0 && (
+                  <div className="space-y-4">
+                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Corte semanal por chofer</h3>
+                    {weekly.drivers.map((driver) => (
+                      <WeeklyTable
+                        key={driver.id}
+                        days={driver.days}
+                        weekStart={weekly.week_start}
+                        weekEnd={weekly.week_end}
+                        driverName={driver.name}
+                        driverId={driver.id}
+                        canConfirm={user?.role === 'Admin'}
+                        onConfirm={handleConfirmDay}
+                      />
+                    ))}
+                    {user?.role === 'Admin' && (
+                      <button
+                        onClick={() => setShowIncidentModal(true)}
+                        className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-white border-2 border-dashed border-gray-200 rounded-2xl text-gray-400 hover:border-[#1a2fa8] hover:text-[#1a2fa8] transition-colors text-sm font-semibold"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Nueva incidencia
+                      </button>
+                    )}
+                  </div>
+                )}
+                {showIncidentModal && weekly && (
+                  <IncidentModal
+                    drivers={weekly.drivers.map(d => ({ id: d.id, name: d.name }))}
+                    onClose={() => setShowIncidentModal(false)}
+                    onSubmit={handleCreateIncident}
+                  />
+                )}
+              </div>
+            )}
             {tab === 'graficas' && <PerformanceCharts data={data} />}
           </>
         )}
@@ -202,12 +271,12 @@ export default function Admin() {
                 </h2>
                 <div className="flex items-center gap-2">
                   {routesLoading && (
-                    <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-water-400 border-t-transparent" />
+                    <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-water-500 border-t-transparent" />
                   )}
                   <button
                     onClick={loadActiveRoutes}
                     disabled={routesLoading}
-                    className="text-xs text-water-600 hover:text-water-800 font-medium disabled:opacity-40"
+                    className="text-xs text-water-600 hover:text-water-700 font-medium disabled:opacity-40"
                   >
                     Refrescar
                   </button>

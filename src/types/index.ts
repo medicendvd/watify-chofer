@@ -167,6 +167,31 @@ export interface LiveRoute {
   tarjeta_sales: LiveSaleDetail[];
 }
 
+export interface WeeklyDayData {
+  date: string;        // 'YYYY-MM-DD'
+  efectivo: number;
+  incidencias: number;
+  negocios: number;
+  link: number;
+  tarjeta: number;
+  nuevos: number;
+  facturado: number;
+  total: number;
+  confirmed: boolean;
+}
+
+export interface WeeklyDriverData {
+  id: number;
+  name: string;
+  days: WeeklyDayData[];
+}
+
+export interface WeeklySummary {
+  week_start: string;
+  week_end: string;
+  drivers: WeeklyDriverData[];
+}
+
 export interface DashboardData {
   date: string;
   grand_total: number;

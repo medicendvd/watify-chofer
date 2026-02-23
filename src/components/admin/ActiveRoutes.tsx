@@ -91,7 +91,7 @@ function EditTxModal({ tx, onSave, onClose }: {
             Cancelar
           </button>
           <button onClick={handleSave} disabled={saving || items.every(i => i.quantity === 0)}
-            className="flex-1 py-3 bg-water-600 text-white rounded-2xl text-sm font-semibold disabled:opacity-50">
+            className="flex-1 py-3 bg-[#1a2fa8] text-white rounded-2xl text-sm font-semibold disabled:opacity-50">
             {saving ? 'Guardando...' : 'Guardar'}
           </button>
         </div>
@@ -284,7 +284,7 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
   const montoFacturado = garrafonesFact * precioPromedio;
   const montoDelDia    = efectivo ? efectivo.total - montoFacturado : 0;
 
-  const headerBg = muted ? 'bg-gray-400' : 'bg-water-600';
+  const headerBg = muted ? 'bg-gray-400' : 'bg-[#1a2fa8]';
 
   return (
     <div className={`bg-white rounded-2xl shadow-sm overflow-hidden border ${muted ? 'border-gray-200 opacity-80' : 'border-gray-100'}`}>
@@ -304,7 +304,7 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
                 </span>
               )}
             </div>
-            <p className={`text-xs ${muted ? 'text-gray-200' : 'text-water-200'}`}>
+            <p className="text-xs text-white/60">
               {muted
                 ? `Finalizada · ${formatHour(route.started_at)} – ${route.finished_at ? formatHour(route.finished_at) : ''}`
                 : 'Ruta en curso'}
@@ -312,7 +312,7 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
           </div>
         </div>
         <div className="text-right">
-          <p className={`text-xs ${muted ? 'text-gray-200' : 'text-water-200'}`}>Total ventas</p>
+          <p className="text-xs text-white/60">Total ventas</p>
           <p className="font-bold text-lg">
             ${Number(route.total_ventas).toLocaleString('es-MX', { minimumFractionDigits: 0 })}
           </p>
@@ -331,11 +331,11 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
           </p>
           <div className="grid grid-cols-3 gap-2 text-center mb-3">
             <div className="bg-white rounded-xl py-2 px-1 shadow-sm">
-              <p className={`text-xl font-bold ${muted ? 'text-gray-600' : 'text-water-700'}`}>{g.cargados}</p>
+              <p className={`text-xl font-bold ${muted ? 'text-gray-600' : 'text-water-500'}`}>{g.cargados}</p>
               <p className="text-xs text-gray-400 mt-0.5">Cargados</p>
             </div>
             <div className="bg-white rounded-xl py-2 px-1 shadow-sm">
-              <p className="text-xl font-bold text-emerald-600">{g.recargas_vendidas + g.nuevos_vendidos}</p>
+              <p className={`text-xl font-bold ${muted ? 'text-gray-600' : 'text-water-500'}`}>{g.recargas_vendidas + g.nuevos_vendidos}</p>
               <p className="text-xs text-gray-400 mt-0.5">Vendidos</p>
             </div>
             <div className="bg-white rounded-xl py-2 px-1 shadow-sm">
@@ -345,24 +345,24 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
           </div>
 
           {/* Debe regresar */}
-          <div className={`rounded-xl px-4 pt-3 pb-4 ${muted ? 'bg-gray-500' : 'bg-water-700'}`}>
+          <div className={`rounded-xl px-4 pt-3 pb-4 ${muted ? 'bg-gray-500' : 'bg-[#1a2fa8]'}`}>
             <p className="text-white/70 text-xs font-semibold uppercase tracking-wide text-center mb-2">
               Debe regresar
             </p>
             <div className="grid grid-cols-3 items-center text-center gap-2">
               {/* Llenos */}
-              <div className={`rounded-lg py-2.5 ${muted ? 'bg-gray-400' : 'bg-water-600'}`}>
+              <div className={`rounded-lg py-2.5 ${muted ? 'bg-gray-400' : 'bg-[#1626a0]'}`}>
                 <p className="text-2xl font-bold text-white">{g.llenos_a_regresar}</p>
                 <p className="text-xs text-white/70 mt-0.5 font-medium">llenos</p>
               </div>
               {/* Total */}
               <div>
-                <p className="text-5xl font-black text-white leading-none">{g.total_a_regresar}</p>
+                <p className={`text-5xl font-black leading-none ${muted ? 'text-white' : 'text-water-400'}`}>{g.total_a_regresar}</p>
                 <p className="text-xs text-white/50 mt-1">total</p>
               </div>
               {/* Vacíos */}
-              <div className={`rounded-lg py-2.5 ${muted ? 'bg-gray-400' : 'bg-water-600'}`}>
-                <p className="text-2xl font-bold text-white">{g.vacios_a_regresar}</p>
+              <div className={`rounded-lg py-2.5 ${muted ? 'bg-gray-400' : 'bg-[#1626a0]'}`}>
+                <p className={`text-2xl font-bold ${muted ? 'text-white' : 'text-water-400'}`}>{g.vacios_a_regresar}</p>
                 <p className="text-xs text-white/70 mt-0.5 font-medium">vacíos</p>
               </div>
             </div>

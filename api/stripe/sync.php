@@ -18,7 +18,7 @@ $stripeConfig = __DIR__ . '/../config/stripe.php';
 if (file_exists($stripeConfig)) require_once $stripeConfig;
 
 $stripeKey = getenv('STRIPE_SECRET_KEY');
-if (!$stripeKey) jsonError('Stripe no configurado. Agrega STRIPE_SECRET_KEY al servidor.', 503);
+if (!$stripeKey) { ob_end_clean(); jsonError('Stripe no configurado. Agrega STRIPE_SECRET_KEY al servidor.'); }
 
 // ── Llamada a la API de Stripe ───────────────────────────────────────────────
 function stripeGet(string $endpoint, array $params, string $key): array {

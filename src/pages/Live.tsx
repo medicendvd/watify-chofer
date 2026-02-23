@@ -121,25 +121,37 @@ export default function Live() {
       {!loading && routes.length > 0 && (
         <div className="px-4 py-6 max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {groups.map(group => (
-              <div key={group.chofer_id} className="space-y-3">
-                {/* Rutas activas del chofer */}
-                {group.active.map(r => (
-                  <LiveDriverCard key={r.route_id} route={r} routeNumber={routeNumById.get(r.route_id) ?? 1} />
-                ))}
-                {/* Rutas finalizadas del mismo chofer */}
-                {group.finished.length > 0 && (
-                  <div className="space-y-3">
-                    <p className="text-xs text-gray-600 uppercase tracking-widest font-semibold pl-1">
-                      ✅ Finalizada{group.finished.length !== 1 ? 's' : ''}
-                    </p>
-                    {group.finished.map(r => (
-                      <LiveDriverCard key={r.route_id} route={r} routeNumber={routeNumById.get(r.route_id) ?? 1} />
-                    ))}
+            {groups.map(group => {
+              const allRoutes = [...group.active, ...group.finished];
+              const choferName = allRoutes[0]?.chofer_name ?? '';
+              const totalVentas = allRoutes.reduce((sum, r) => sum + r.transaction_count, 0);
+              return (
+                <div key={group.chofer_id} className="space-y-3">
+                  {/* Total de ventas del chofer */}
+                  <div className="flex items-center justify-between px-1">
+                    <span className="text-sm font-bold text-gray-300">{choferName}</span>
+                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-800" style={{ color: '#01fad5' }}>
+                      {totalVentas} venta{totalVentas !== 1 ? 's' : ''} totales
+                    </span>
                   </div>
-                )}
-              </div>
-            ))}
+                  {/* Rutas activas del chofer */}
+                  {group.active.map(r => (
+                    <LiveDriverCard key={r.route_id} route={r} routeNumber={routeNumById.get(r.route_id) ?? 1} />
+                  ))}
+                  {/* Rutas finalizadas del mismo chofer */}
+                  {group.finished.length > 0 && (
+                    <div className="space-y-3">
+                      <p className="text-xs text-gray-600 uppercase tracking-widest font-semibold pl-1">
+                        ✅ Finalizada{group.finished.length !== 1 ? 's' : ''}
+                      </p>
+                      {group.finished.map(r => (
+                        <LiveDriverCard key={r.route_id} route={r} routeNumber={routeNumById.get(r.route_id) ?? 1} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

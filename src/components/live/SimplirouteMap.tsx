@@ -35,6 +35,7 @@ export default function SimplirouteMap({ routes, height }: Props) {
     const map = L.map(containerRef.current, {
       zoomControl: true,
       attributionControl: false,
+      zoomSnap: 0.5,
     });
     mapRef.current = map;
 
@@ -80,6 +81,7 @@ export default function SimplirouteMap({ routes, height }: Props) {
 
     if (allLatLngs.length > 0) {
       map.fitBounds(L.latLngBounds(allLatLngs), { padding: [50, 50] });
+      map.setZoom(map.getZoom() + 0.5);
     } else {
       map.setView([20.6597, -103.3496], 12); // Guadalajara por defecto
     }

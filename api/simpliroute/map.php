@@ -24,7 +24,6 @@ function sr_get(string $url, string $token): ?array {
     $body  = curl_exec($ch);
     $code  = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $error = curl_error($ch);
-    curl_close($ch);
 
     if ($error || $code !== 200 || !$body) return null;
     $decoded = json_decode($body, true);
@@ -34,8 +33,7 @@ function sr_get(string $url, string $token): ?array {
 // 1. Vehículos con rutas hoy
 $vehicles = sr_get("https://api.simpliroute.com/v1/plans/{$date}/vehicles/", $token);
 if (empty($vehicles)) {
-    json_response(['routes' => [], 'date' => $date]);
-    exit;
+    jsonResponse(['routes' => [], 'date' => $date]);
 }
 
 // 2. Todas las visitas del día
@@ -93,4 +91,4 @@ foreach ($vehicles as $vehicle) {
     }
 }
 
-json_response(['routes' => $routes, 'date' => $date]);
+jsonResponse(['routes' => $routes, 'date' => $date]);

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuthContext } from '../store/authContext';
 import { api } from '../lib/api';
 import type { LiveRoute, SimplirouteMapData } from '../types';
@@ -172,6 +173,9 @@ export default function Live() {
           <button onClick={load} className="text-xs text-gray-400 hover:text-white border border-gray-700 rounded-lg px-3 py-1.5 transition-colors">
             Refrescar
           </button>
+          <Link to="/admin" className="text-xs text-gray-400 hover:text-white border border-gray-700 rounded-lg px-3 py-1.5 transition-colors">
+            Regresar
+          </Link>
           <button onClick={logout} className="text-xs text-gray-400 hover:text-white border border-gray-700 rounded-lg px-3 py-1.5 transition-colors">
             Salir
           </button>

@@ -23,12 +23,10 @@ export default function Live() {
   const [now, setNow]                 = useState(new Date());
 
   // Simpliroute map
-  const [mapData, setMapData]       = useState<SimplirouteMapData | null>(null);
-  const [mapError, setMapError]     = useState('');
-  const [showMap, setShowMap]       = useState(false);
+  const [mapData, setMapData]         = useState<SimplirouteMapData | null>(null);
+  const [mapError, setMapError]       = useState('');
+  const [showMap, setShowMap]         = useState(false);
   const [mapProgress, setMapProgress] = useState(0);
-  const cycleRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // viewport height para el mapa
   const [vh, setVh] = useState(window.innerHeight);
@@ -37,7 +35,7 @@ export default function Live() {
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
-  const mapHeight = vh - HEADER_H - 2; // -2 por la barra de progreso
+  const mapHeight = vh - HEADER_H - 2;
 
   // ─── Rutas Watify ──────────────────────────────────────────────────────────
   const load = useCallback(async () => {
@@ -75,37 +73,41 @@ export default function Live() {
   // ─── Ciclo automático mapa ↔ datos ─────────────────────────────────────────
   const hasRoutes = (mapData?.routes.length ?? 0) > 0;
 
-  const startBar = useCallback((ms: number) => {
-    setMapProgress(0);
-    const start = Date.now();
-    if (progressRef.current) clearInterval(progressRef.current);
-    progressRef.current = setInterval(() => {
-      setMapProgress(Math.min(100, ((Date.now() - start) / ms) * 100));
-    }, 80);
-  }, []);
+  // Usamos un ref para los timers para que el cleanup los cancele correctamente
+  const timersRef = useRef<{ timeout: ReturnType<typeof setTimeout> | null; bar: ReturnType<typeof setInterval> | null }>({ timeout: null, bar: null });
 
-  // Arranca el ciclo una sola vez cuando hay datos
-  const cycleStarted = useRef(false);
   useEffect(() => {
-    if (!hasRoutes || cycleStarted.current) return;
-    cycleStarted.current = true;
+    if (!hasRoutes) return;
 
-    const run = () => {
+    function startBar(ms: number) {
+      if (timersRef.current.bar) clearInterval(timersRef.current.bar);
+      setMapProgress(0);
+      const start = Date.now();
+      timersRef.current.bar = setInterval(() => {
+        setMapProgress(Math.min(100, ((Date.now() - start) / ms) * 100));
+      }, 80);
+    }
+
+    function showMapPhase() {
       setShowMap(true);
       startBar(MAP_MS);
-      cycleRef.current = setTimeout(() => {
-        setShowMap(false);
-        startBar(DATA_MS);
-        cycleRef.current = setTimeout(run, DATA_MS);
-      }, MAP_MS);
-    };
-    run();
+      timersRef.current.timeout = setTimeout(showDataPhase, MAP_MS);
+    }
+
+    function showDataPhase() {
+      setShowMap(false);
+      startBar(DATA_MS);
+      timersRef.current.timeout = setTimeout(showMapPhase, DATA_MS);
+    }
+
+    showMapPhase();
 
     return () => {
-      if (cycleRef.current)    clearTimeout(cycleRef.current);
-      if (progressRef.current) clearInterval(progressRef.current);
+      if (timersRef.current.timeout) clearTimeout(timersRef.current.timeout);
+      if (timersRef.current.bar)     clearInterval(timersRef.current.bar);
     };
-  }, [hasRoutes, startBar]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasRoutes]);
 
   // ─── Reloj ─────────────────────────────────────────────────────────────────
   useEffect(() => {

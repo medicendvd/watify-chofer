@@ -108,6 +108,46 @@ foreach ($byDriver->fetchAll() as $row) {
     $drivers[$cid]['total'] += (float)$row['total'];
 }
 
+// ── 3b. Aplicar incidencias del día al efectivo ─────────────────────────────
+$incStmt = $pdo->prepare("
+    SELECT chofer_id, COALESCE(SUM(amount), 0) AS total
+    FROM weekly_incidents
+    WHERE `date` = ?
+    GROUP BY chofer_id
+");
+$incStmt->execute([$date]);
+$incByChofer      = [];
+$totalIncidencias = 0.0;
+foreach ($incStmt->fetchAll() as $r) {
+    $incByChofer[(int)$r['chofer_id']] = (float)$r['total'];
+    $totalIncidencias += (float)$r['total'];
+}
+
+// Ajustar total global de Efectivo y grand_total
+if ($totalIncidencias != 0) {
+    foreach ($byMethodData as &$m) {
+        if ($m['method'] === 'Efectivo') {
+            $m['total'] = max(0, (float)$m['total'] - $totalIncidencias);
+            break;
+        }
+    }
+    unset($m);
+    $grandTotal = array_sum(array_column($byMethodData, 'total'));
+}
+
+// Ajustar efectivo por chofer en by_driver
+foreach ($incByChofer as $choferId => $incAmount) {
+    if (!isset($drivers[$choferId])) continue;
+    foreach ($drivers[$choferId]['methods'] as &$method) {
+        if ($method['method'] === 'Efectivo') {
+            $method['total'] = max(0, $method['total'] - $incAmount);
+            break;
+        }
+    }
+    unset($method);
+    $drivers[$choferId]['total'] = max(0, $drivers[$choferId]['total'] - $incAmount);
+}
+
 // ── 4. Series semanales (últimos 7 días) ────────────────────────────────────
 $weekly = $pdo->prepare("
     SELECT DATE(transaction_date) AS day, SUM(total) AS total

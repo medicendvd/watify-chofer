@@ -19,6 +19,7 @@ export default function ProductCard({ product, unitPrice }: Props) {
   const cartItem = items.find((i) => i.product.id === product.id);
   const quantity = cartItem?.quantity ?? 0;
   const gradient = PRODUCT_COLORS[product.name] ?? 'from-gray-400 to-gray-600';
+  const isRecarga = product.name === 'Recarga';
   const price = Number(unitPrice);
 
   const [editing, setEditing] = useState(false);
@@ -45,7 +46,10 @@ export default function ProductCard({ product, unitPrice }: Props) {
 
   return (
     <>
-      <div className={`bg-gradient-to-br ${gradient} rounded-2xl p-3 text-white shadow-md flex flex-col gap-1.5 min-h-[88px]`}>
+      <div
+        className={`${isRecarga ? '' : `bg-gradient-to-br ${gradient}`} rounded-2xl p-3 text-white shadow-md flex flex-col gap-1.5 min-h-[88px]`}
+        style={isRecarga ? { background: '#32408e' } : {}}
+      >
         <div className="flex-1">
           <div className="flex items-baseline gap-1.5">
             <p className="font-bold text-xs leading-tight">{product.name}</p>
@@ -63,6 +67,7 @@ export default function ProductCard({ product, unitPrice }: Props) {
           <button
             onClick={() => setEditing(true)}
             className="text-2xl font-bold w-10 text-center active:scale-95 transition-transform"
+            style={isRecarga ? { color: '#08ffbe' } : {}}
           >
             {quantity}
           </button>

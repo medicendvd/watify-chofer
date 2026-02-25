@@ -127,7 +127,8 @@ foreach ($rows as $r) {
     if (!isset($driverMap[$uid]))              $driverMap[$uid] = ['name' => $r['user_name'], 'days' => []];
     if (!isset($driverMap[$uid]['days'][$day])) $driverMap[$uid]['days'][$day] = $emptyDay;
     match ($method) {
-        'Efectivo' => $driverMap[$uid]['days'][$day]['efectivo'] += (float)$r['total'],
+        'Efectivo', 'Negocios en Efectivo' =>
+            $driverMap[$uid]['days'][$day]['efectivo'] += (float)$r['total'],
         'Negocios' => $driverMap[$uid]['days'][$day]['negocios'] += (float)$r['total'],
         'Link'     => $driverMap[$uid]['days'][$day]['link']     += (float)$r['total'],
         'Tarjeta'  => $driverMap[$uid]['days'][$day]['tarjeta']  += (float)$r['total'],

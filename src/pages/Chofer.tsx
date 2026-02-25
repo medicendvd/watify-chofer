@@ -16,10 +16,11 @@ import FinalizarRutaModal from '../components/chofer/FinalizarRutaModal';
 
 
 const PAYMENT_METHODS: PaymentMethod[] = [
-  { id: 1, name: 'Efectivo', color: '#22c55e', icon: 'banknote',    is_active: true },
-  { id: 2, name: 'Tarjeta',  color: '#3b82f6', icon: 'credit-card', is_active: true },
-  { id: 3, name: 'Negocios', color: '#7c3aed', icon: 'building-2',  is_active: true },
-  { id: 4, name: 'Link',     color: '#f97316', icon: 'smartphone',  is_active: true },
+  { id: 1, name: 'Efectivo',             color: '#22c55e', icon: 'banknote',    is_active: true },
+  { id: 2, name: 'Tarjeta',              color: '#3b82f6', icon: 'credit-card', is_active: true },
+  { id: 4, name: 'Link',                 color: '#f97316', icon: 'smartphone',  is_active: true },
+  { id: 3, name: 'Negocios a crédito',   color: '#7c3aed', icon: 'building-2',  is_active: true },
+  { id: 5, name: 'Negocios en Efectivo', color: '#0d9488', icon: 'store',       is_active: true },
 ];
 
 export default function Chofer() {
@@ -63,15 +64,9 @@ export default function Chofer() {
   // Cargar productos, empresas y transacciones cuando hay ruta
   useEffect(() => {
     if (!route) return;
-    Promise.all([
-      api.getProducts() as Promise<Product[]>,
-      api.getCompanies() as Promise<Company[]>,
-      api.getTransactions() as Promise<Transaction[]>,
-    ]).then(([prods, comps, txs]) => {
-      setProducts(prods);
-      setCompanies(comps);
-      setTransactions(txs);
-    });
+    (api.getProducts() as Promise<Product[]>).then(prods => setProducts(prods));
+    (api.getCompanies() as Promise<Company[]>).then(comps => setCompanies(comps)).catch(() => {});
+    (api.getTransactions() as Promise<Transaction[]>).then(txs => setTransactions(txs));
   }, [route?.id]);
 
   const loadTransactions = async () => {
@@ -104,7 +99,7 @@ export default function Chofer() {
   const handleRegister = () => {
     setError('');
     if (items.length === 0) { setError('Agrega al menos un producto'); return; }
-    if (selectedMethod.name === 'Negocios' && !selectedCompany) {
+    if (['Negocios a crédito', 'Negocios en Efectivo'].includes(selectedMethod.name) && !selectedCompany) {
       setError('Selecciona la empresa'); return;
     }
     if ((selectedMethod.name === 'Link' || selectedMethod.name === 'Tarjeta') && !customerName.trim()) {
@@ -223,21 +218,44 @@ export default function Chofer() {
         {/* Método de pago */}
         <div>
           <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Método de pago</h2>
-          <div className="grid grid-cols-4 gap-2">
-            {PAYMENT_METHODS.map(pm => (
-              <PaymentMethodCard
-                key={pm.id}
-                method={pm}
-                selected={selectedMethod.id === pm.id}
-                onSelect={() => {
-                  setSelectedMethod(pm);
-                  if (pm.name !== 'Negocios') setSelectedCompany(null);
-                }}
-              />
-            ))}
+          <div className="space-y-2">
+            <div className="grid grid-cols-3 gap-2">
+              {PAYMENT_METHODS.slice(0, 3).map(pm => (
+                <PaymentMethodCard
+                  key={pm.id}
+                  method={pm}
+                  selected={selectedMethod.id === pm.id}
+                  onSelect={() => {
+                    setSelectedMethod(pm);
+                    setSelectedCompany(null);
+                  }}
+                />
+              ))}
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {PAYMENT_METHODS.slice(3).map(pm => (
+                <PaymentMethodCard
+                  key={pm.id}
+                  method={pm}
+                  selected={selectedMethod.id === pm.id}
+                  onSelect={() => {
+                    setSelectedMethod(pm);
+                    if (pm.name !== 'Negocios a crédito' && pm.name !== 'Negocios en Efectivo') setSelectedCompany(null);
+                  }}
+                />
+              ))}
+            </div>
           </div>
-          {selectedMethod.name === 'Negocios' && (
-            <CompanySelector companies={companies} value={selectedCompany} onChange={setSelectedCompany} />
+          {(selectedMethod.name === 'Negocios a crédito' || selectedMethod.name === 'Negocios en Efectivo') && (
+            <CompanySelector
+              companies={companies.filter(c =>
+                selectedMethod.name === 'Negocios a crédito'
+                  ? c.payment_method_id === null
+                  : c.payment_method_id !== null
+              )}
+              value={selectedCompany}
+              onChange={setSelectedCompany}
+            />
           )}
         </div>
 

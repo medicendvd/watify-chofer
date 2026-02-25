@@ -25,6 +25,7 @@ export interface Company {
   id: number;
   name: string;
   is_active: boolean;
+  payment_method_id: number | null;
   special_prices: Record<number, number>; // product_id -> price
 }
 

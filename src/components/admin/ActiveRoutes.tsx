@@ -107,10 +107,11 @@ interface Props {
 }
 
 const METHOD_ICONS: Record<string, string> = {
-  Efectivo: '💵',
-  Tarjeta:  '💳',
-  Negocios: '🏢',
-  Link:     '📲',
+  Efectivo:              '💵',
+  Tarjeta:               '💳',
+  Negocios:              '🏢',
+  Link:                  '📲',
+  'Negocios en Efectivo': '🏪',
 };
 
 function formatTime(d: Date) {
@@ -288,8 +289,21 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
     }
   };
 
-  const efectivo = route.by_method.find(m => m.method === 'Efectivo');
-  const otrosMethods = route.by_method.filter(m => m.method !== 'Efectivo' && m.method !== 'Negocios');
+  const efectivoEntries = route.by_method.filter(
+    m => m.method === 'Efectivo' || m.method === 'Negocios en Efectivo'
+  );
+  const efectivo = efectivoEntries.length > 0 ? {
+    ...efectivoEntries[0],
+    method:     'Efectivo',
+    total:      efectivoEntries.reduce((s, m) => s + m.total, 0),
+    count:      efectivoEntries.reduce((s, m) => s + m.count, 0),
+    garrafones: efectivoEntries.reduce((s, m) => s + m.garrafones, 0),
+  } : undefined;
+  const otrosMethods = route.by_method.filter(
+    m => m.method !== 'Efectivo' &&
+         m.method !== 'Negocios' &&
+         m.method !== 'Negocios en Efectivo'
+  );
   const g = route.garrafones;
 
   // Calcular split de efectivo si hay facturas
@@ -507,9 +521,9 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
               )}
 
               {/* Transacciones individuales de efectivo */}
-              {route.transactions.filter(tx => tx.method === 'Efectivo').length > 0 && (
+              {route.transactions.filter(tx => tx.method === 'Efectivo' || tx.method === 'Negocios en Efectivo').length > 0 && (
                 <div className="mt-3 pt-3 border-t border-green-200 space-y-1">
-                  {route.transactions.filter(tx => tx.method === 'Efectivo').map(tx => (
+                  {route.transactions.filter(tx => tx.method === 'Efectivo' || tx.method === 'Negocios en Efectivo').map(tx => (
                     <div key={tx.id} className="flex items-center justify-between text-xs">
                       <span className="text-green-700">
                         {tx.items.map(i => `${i.product} ×${i.quantity}`).join(', ')}

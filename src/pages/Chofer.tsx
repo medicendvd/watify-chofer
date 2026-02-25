@@ -43,6 +43,7 @@ export default function Chofer() {
   const [notes, setNotes]                   = useState('');
   const [showModal, setShowModal]           = useState(false);
   const [showResumen, setShowResumen]       = useState(false);
+  const [showNotes, setShowNotes]           = useState(false);
   const [submitting, setSubmitting]         = useState(false);
   const [error, setError]                   = useState('');
   const [customerNameError, setCustomerNameError] = useState(false);
@@ -129,6 +130,7 @@ export default function Chofer() {
       clearCart();
       setCustomerName('');
       setNotes('');
+      setShowNotes(false);
       setSelectedCompany(null);
       setSelectedMethod(PAYMENT_METHODS[0]);
       setShowModal(false);
@@ -259,16 +261,23 @@ export default function Chofer() {
 
         {/* Comentarios */}
         <div>
-          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-            Comentarios
-          </label>
-          <textarea
-            value={notes}
-            onChange={e => setNotes(e.target.value)}
-            placeholder="Opcional..."
-            rows={2}
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-water-400 text-sm resize-none"
-          />
+          {!showNotes ? (
+            <button
+              onClick={() => setShowNotes(true)}
+              className="w-full py-3 border border-gray-300 text-gray-600 hover:text-gray-800 hover:border-gray-400 font-medium text-sm rounded-xl transition-colors text-center"
+            >
+              + Agregar comentario
+            </button>
+          ) : (
+            <textarea
+              autoFocus
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              placeholder="Comentario opcional..."
+              rows={2}
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-water-400 text-sm resize-none"
+            />
+          )}
         </div>
 
         {error && (

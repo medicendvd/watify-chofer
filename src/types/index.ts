@@ -167,10 +167,19 @@ export interface LiveRoute {
   tarjeta_sales: LiveSaleDetail[];
 }
 
+export interface WeeklyIncident {
+  id: number;
+  amount: number;
+  description: string;
+  type: 'deduccion' | 'ajuste';
+  prev_efectivo: number | null;
+}
+
 export interface WeeklyDayData {
   date: string;        // 'YYYY-MM-DD'
   efectivo: number;
   incidencias: number;
+  incidents_list: WeeklyIncident[];
   negocios: number;
   link: number;
   tarjeta: number;

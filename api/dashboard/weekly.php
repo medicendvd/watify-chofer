@@ -78,17 +78,31 @@ foreach ($stmtNuevos->fetchAll() as $r) {
     $nuevosByDriverDay[$r['user_id']][$r['day']] = (float)$r['nuevos'];
 }
 
-// Incidencias por chofer y día
+// Incidencias por chofer y día — individuales para mostrar detalle y tipo
 $stmtInc = $pdo->prepare("
-    SELECT chofer_id, `date`, SUM(amount) AS total
+    SELECT id, chofer_id, `date`, amount, description,
+           COALESCE(type, 'deduccion') AS type,
+           prev_efectivo
     FROM weekly_incidents
     WHERE `date` BETWEEN ? AND ?
-    GROUP BY chofer_id, `date`
+    ORDER BY id ASC
 ");
 $stmtInc->execute([$mondayStr, $sundayStr]);
 $incidentsByDriverDay = [];
 foreach ($stmtInc->fetchAll() as $r) {
-    $incidentsByDriverDay[$r['chofer_id']][$r['date']] = (float)$r['total'];
+    $uid = $r['chofer_id'];
+    $day = $r['date'];
+    if (!isset($incidentsByDriverDay[$uid][$day])) {
+        $incidentsByDriverDay[$uid][$day] = ['total' => 0.0, 'list' => []];
+    }
+    $incidentsByDriverDay[$uid][$day]['total'] += (float)$r['amount'];
+    $incidentsByDriverDay[$uid][$day]['list'][] = [
+        'id'            => (int)$r['id'],
+        'amount'        => (float)$r['amount'],
+        'description'   => $r['description'],
+        'type'          => $r['type'],
+        'prev_efectivo' => $r['prev_efectivo'] !== null ? (float)$r['prev_efectivo'] : null,
+    ];
 }
 
 // Confirmaciones por chofer y día
@@ -141,21 +155,24 @@ foreach ($driverMap as $uid => $driverData) {
     $driverDays = [];
     for ($i = 0; $i < 7; $i++) {
         $d           = (clone $monday)->modify("+$i days")->format('Y-m-d');
-        $data        = $driverData['days'][$d] ?? $emptyDay;
-        $incidencias = $incidentsByDriverDay[$uid][$d] ?? 0;
+        $data          = $driverData['days'][$d] ?? $emptyDay;
+        $incData       = $incidentsByDriverDay[$uid][$d] ?? ['total' => 0.0, 'list' => []];
+        $incidencias   = $incData['total'];
+        $incidentsList = $incData['list'];
         $efectivoNeto = max(0, $data['efectivo'] - $incidencias);
         $total        = $efectivoNeto + $data['negocios'] + $data['link'] + $data['tarjeta'];
         $driverDays[] = [
-            'date'        => $d,
-            'efectivo'    => $efectivoNeto,
-            'incidencias' => $incidencias,
-            'facturado'   => $data['facturado'],
-            'negocios'    => $data['negocios'],
-            'link'        => $data['link'],
-            'tarjeta'     => $data['tarjeta'],
-            'nuevos'      => $data['nuevos'],
-            'total'       => $total,
-            'confirmed'   => $confirmedByDriverDay[$uid][$d] ?? false,
+            'date'           => $d,
+            'efectivo'       => $efectivoNeto,
+            'incidencias'    => $incidencias,
+            'incidents_list' => $incidentsList,
+            'facturado'      => $data['facturado'],
+            'negocios'       => $data['negocios'],
+            'link'           => $data['link'],
+            'tarjeta'        => $data['tarjeta'],
+            'nuevos'         => $data['nuevos'],
+            'total'          => $total,
+            'confirmed'      => $confirmedByDriverDay[$uid][$d] ?? false,
         ];
     }
     $drivers[] = [

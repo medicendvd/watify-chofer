@@ -101,4 +101,19 @@ if ($method === 'POST') {
     ], 201);
 }
 
+// PATCH — ajustar garrafones_loaded (solo Admin)
+if ($method === 'PATCH') {
+    if ($user['role'] !== 'Admin') jsonError('Acceso denegado', 403);
+    $body    = getBody();
+    $routeId = (int)($body['route_id'] ?? 0);
+    $garrafones = (int)($body['garrafones_loaded'] ?? 0);
+    if (!$routeId)        jsonError('route_id requerido');
+    if ($garrafones <= 0) jsonError('Cantidad inválida');
+
+    $stmt = $pdo->prepare('UPDATE routes SET garrafones_loaded = ? WHERE id = ?');
+    $stmt->execute([$garrafones, $routeId]);
+
+    jsonResponse(['ok' => true]);
+}
+
 jsonError('Método no permitido', 405);

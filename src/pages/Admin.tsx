@@ -48,6 +48,11 @@ export default function Admin() {
     await loadWeekly();
   };
 
+  const handleAdjustEfectivo = async (choferId: number, date: string, prevEfectivo: number, newEfectivo: number, description: string) => {
+    await api.adjustEfectivo(choferId, date, prevEfectivo, newEfectivo, description);
+    await loadWeekly();
+  };
+
   // Pagos por Link
   const [linkPayments, setLinkPayments] = useState<LinkPayment[]>([]);
 
@@ -223,6 +228,7 @@ export default function Admin() {
                         driverId={driver.id}
                         canConfirm={user?.role === 'Admin'}
                         onConfirm={handleConfirmDay}
+                        onAdjustEfectivo={handleAdjustEfectivo}
                       />
                     ))}
                     {user?.role === 'Admin' && (

@@ -24,7 +24,7 @@ const PAYMENT_METHODS: PaymentMethod[] = [
 
 export default function Chofer() {
   const { user, logout } = useAuthContext();
-  const { items, total, clearCart } = useCartStore();
+  const { items, total, clearCart, setQuantity } = useCartStore();
 
   // Estado de ruta
   const [route, setRoute]               = useState<Route | null>(null);
@@ -92,6 +92,14 @@ export default function Chofer() {
     }
     return Number(product.base_price);
   };
+
+  // Reprecia los items del carrito cuando cambia la empresa seleccionada
+  useEffect(() => {
+    if (items.length === 0) return;
+    items.forEach(item => {
+      setQuantity(item.product, getPrice(item.product), item.quantity);
+    });
+  }, [selectedCompany]);
 
   const handleRegister = () => {
     setError('');

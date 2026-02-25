@@ -65,6 +65,8 @@ export const api = {
     request('/dashboard/confirm.php', { method: 'POST', body: JSON.stringify({ chofer_id, date }) }),
   createIncident: (chofer_id: number, description: string, amount: number) =>
     request('/dashboard/incidents.php', { method: 'POST', body: JSON.stringify({ chofer_id, description, amount }) }),
+  adjustEfectivo: (chofer_id: number, date: string, prev_efectivo: number, new_efectivo: number, description: string) =>
+    request('/dashboard/incidents.php', { method: 'POST', body: JSON.stringify({ chofer_id, date, type: 'ajuste', prev_efectivo, new_efectivo, description }) }),
 
   // Routes
   getActiveRoute: () => request('/routes/index.php'),
@@ -72,6 +74,8 @@ export const api = {
   getLiveRoutes: () => request('/routes/live.php'),
   createRoute: (garrafones_loaded: number) =>
     request('/routes/index.php', { method: 'POST', body: JSON.stringify({ garrafones_loaded }) }),
+  updateRouteGarrafones: (route_id: number, garrafones_loaded: number) =>
+    request('/routes/index.php', { method: 'PATCH', body: JSON.stringify({ route_id, garrafones_loaded }) }),
   finishRoute: (route_id: number) =>
     request('/routes/finish.php', { method: 'POST', body: JSON.stringify({ route_id }) }),
 

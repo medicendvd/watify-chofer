@@ -270,6 +270,23 @@ interface RouteCardProps {
 function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCardProps) {
   const [facturarOpen, setFacturarOpen] = useState(false);
   const [editingTx, setEditingTx] = useState<AdminTx | null>(null);
+  const [editingGarrafones, setEditingGarrafones] = useState(false);
+  const [garrafonesInput, setGarrafonesInput] = useState(route.garrafones.cargados);
+  const [savingGarrafones, setSavingGarrafones] = useState(false);
+
+  const handleSaveGarrafones = async () => {
+    if (garrafonesInput <= 0) return;
+    setSavingGarrafones(true);
+    try {
+      await api.updateRouteGarrafones(route.route_id, garrafonesInput);
+      setEditingGarrafones(false);
+      onRefresh?.();
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : 'Error al guardar');
+    } finally {
+      setSavingGarrafones(false);
+    }
+  };
 
   const efectivo = route.by_method.find(m => m.method === 'Efectivo');
   const otrosMethods = route.by_method.filter(m => m.method !== 'Efectivo' && m.method !== 'Negocios');
@@ -330,9 +347,55 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
             🫙 Garrafones
           </p>
           <div className="grid grid-cols-3 gap-2 text-center mb-3">
-            <div className="bg-white rounded-xl py-2 px-1 shadow-sm">
-              <p className="text-xl font-bold" style={{ color: muted ? '#9ca3af' : '#002eca' }}>{g.cargados}</p>
-              <p className="text-xs text-gray-400 mt-0.5">Cargados</p>
+            {/* Tile Cargados — editable por admin */}
+            <div className="bg-white rounded-xl py-2 px-1 shadow-sm relative">
+              {editingGarrafones ? (
+                <div className="flex flex-col items-center gap-1 px-1">
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    value={garrafonesInput}
+                    onChange={e => setGarrafonesInput(Number(e.target.value))}
+                    className="w-full text-center text-base font-bold border border-blue-300 rounded-lg px-1 py-0.5 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    style={{ color: muted ? '#9ca3af' : '#002eca' }}
+                    autoFocus
+                  />
+                  <div className="flex gap-1 w-full">
+                    <button
+                      onClick={handleSaveGarrafones}
+                      disabled={savingGarrafones || garrafonesInput <= 0}
+                      className="flex-1 text-xs font-semibold bg-blue-600 text-white rounded-md py-0.5 disabled:opacity-40"
+                    >
+                      {savingGarrafones ? '…' : '✓'}
+                    </button>
+                    <button
+                      onClick={() => { setEditingGarrafones(false); setGarrafonesInput(g.cargados); }}
+                      className="flex-1 text-xs text-gray-500 border border-gray-200 rounded-md py-0.5"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-center gap-1">
+                    <p className="text-xl font-bold" style={{ color: muted ? '#9ca3af' : '#002eca' }}>{g.cargados}</p>
+                    {!muted && (
+                      <button
+                        onClick={() => { setGarrafonesInput(g.cargados); setEditingGarrafones(true); }}
+                        className="text-gray-400 hover:text-blue-500 transition-colors leading-none"
+                        title="Editar cantidad cargada"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
+                          <path d="M13.488 2.513a1.75 1.75 0 0 0-2.475 0L4.75 8.774a2.75 2.75 0 0 0-.596.892l-.848 2.303a.75.75 0 0 0 .97.97l2.303-.848a2.75 2.75 0 0 0 .892-.596l6.261-6.263a1.75 1.75 0 0 0 0-2.475ZM9.016 5.43 10.57 6.984 5.781 11.77a1.25 1.25 0 0 1-.405.271l-1.173.432.432-1.173a1.25 1.25 0 0 1 .271-.405L9.016 5.43Zm2.02-1.544.974.974a.25.25 0 0 1 0 .354l-.86.86L9.696 4.53l.86-.86a.25.25 0 0 1 .48 0Z" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-400 mt-0.5">Cargados</p>
+                </>
+              )}
             </div>
             <div className="bg-white rounded-xl py-2 px-1 shadow-sm">
               <p className="text-xl font-bold" style={{ color: muted ? '#9ca3af' : '#002eca' }}>{g.recargas_vendidas + g.nuevos_vendidos}</p>

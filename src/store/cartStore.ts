@@ -19,7 +19,7 @@ export const useCartStore = create<CartStore>((set, get) => ({
       if (existing) {
         return {
           items: state.items.map((i) =>
-            i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i
+            i.product.id === product.id ? { ...i, quantity: i.quantity + 1, unit_price: unitPrice } : i
           ),
         };
       }
@@ -47,7 +47,7 @@ export const useCartStore = create<CartStore>((set, get) => ({
       if (!exists) return { items: [...state.items, { product, quantity: qty, unit_price: unitPrice }] };
       return {
         items: state.items.map((i) =>
-          i.product.id === product.id ? { ...i, quantity: qty } : i
+          i.product.id === product.id ? { ...i, quantity: qty, unit_price: unitPrice } : i
         ),
       };
     }),

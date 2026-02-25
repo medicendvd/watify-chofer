@@ -69,6 +69,10 @@ export default function WeeklyTable({ days, weekStart, weekEnd, driverName, driv
   const [expanded, setExpanded]             = useState(false);
   const [confirmingDate, setConfirmingDate] = useState<string | null>(null);
 
+  // Estado para el modal de confirmación
+  const [confirmDay, setConfirmDay]       = useState<{ date: string; efectivo: number } | null>(null);
+  const [confirmSaving, setConfirmSaving] = useState(false);
+
   // Estado para el modal de ajuste
   const [adjustDay, setAdjustDay]         = useState<{ date: string; efectivo: number } | null>(null);
   const [adjustNewTotal, setAdjustNewTotal] = useState('');
@@ -90,10 +94,17 @@ export default function WeeklyTable({ days, weekStart, weekEnd, driverName, driv
 
   const visibleRows = ROWS.filter(r => !r.collapsible || expanded);
 
-  const handleConfirm = async (date: string) => {
-    setConfirmingDate(date);
-    try { await onConfirm(driverId, date); }
-    finally { setConfirmingDate(null); }
+  const handleConfirm = async () => {
+    if (!confirmDay) return;
+    setConfirmSaving(true);
+    setConfirmingDate(confirmDay.date);
+    try {
+      await onConfirm(driverId, confirmDay.date);
+      setConfirmDay(null);
+    } finally {
+      setConfirmSaving(false);
+      setConfirmingDate(null);
+    }
   };
 
   const openAdjust = (date: string, efectivo: number) => {
@@ -208,7 +219,7 @@ export default function WeeklyTable({ days, weekStart, weekEnd, driverName, driv
                                   </span>
                                 ) : (
                                   <button
-                                    onClick={() => handleConfirm(d.date)}
+                                    onClick={() => setConfirmDay({ date: d.date, efectivo: val })}
                                     disabled={confirmingDate === d.date}
                                     className="mt-0.5 text-[10px] font-semibold text-[#1a2fa8] border border-[#1a2fa8]/30 rounded-full px-2 py-0.5 hover:bg-[#1a2fa8] hover:text-white transition-colors disabled:opacity-40 whitespace-nowrap"
                                   >
@@ -269,6 +280,41 @@ export default function WeeklyTable({ days, weekStart, weekEnd, driverName, driv
           {expanded ? 'Ocultar desglose' : 'Ver desglose (Empresas, Link, Tarjeta)'}
         </button>
       </div>
+
+      {/* Modal de confirmación del día */}
+      {confirmDay && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden">
+            <div className="px-5 pt-5 pb-4 border-b border-gray-100">
+              <h3 className="font-bold text-gray-900 text-base">¿Confirmar total del día?</h3>
+              <p className="text-xs text-gray-400 mt-0.5">
+                {driverName} · {fmtDay(confirmDay.date)} {fmtMonth(confirmDay.date)}
+              </p>
+            </div>
+            <div className="px-5 py-5 text-center">
+              <p className="text-xs text-gray-500 mb-1 uppercase tracking-wide font-semibold">Total sobre del día</p>
+              <p className="text-4xl font-black text-[#1a2fa8]">{fmt(confirmDay.efectivo)}</p>
+              <p className="text-xs text-gray-400 mt-2">Esta acción registrará que el efectivo fue entregado y revisado.</p>
+            </div>
+            <div className="px-5 pb-5 flex gap-3">
+              <button
+                onClick={() => setConfirmDay(null)}
+                disabled={confirmSaving}
+                className="flex-1 py-3 border border-gray-200 rounded-2xl text-sm text-gray-500"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleConfirm}
+                disabled={confirmSaving}
+                className="flex-1 py-3 bg-[#1a2fa8] text-white rounded-2xl text-sm font-semibold disabled:opacity-50 hover:bg-[#152690] transition-colors"
+              >
+                {confirmSaving ? 'Confirmando...' : 'Sí, confirmar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal de ajuste de efectivo */}
       {adjustDay && (

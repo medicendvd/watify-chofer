@@ -46,7 +46,7 @@ function EditTxModal({ tx, onSave, onClose }: {
   const total = items.reduce((s, i) => s + i.unit_price * i.quantity, 0);
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/50 z-[9999] flex items-end sm:items-center justify-center p-4">
       <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden">
         <div className="px-5 pt-5 pb-4 border-b border-gray-100">
           <div className="flex items-center gap-2">
@@ -171,7 +171,7 @@ function FacturarModal({ routeId, maxGarrafones, facturas, onClose, onRefresh }:
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/50 z-[9999] flex items-end sm:items-center justify-center p-4">
       <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden">
         <div className="px-5 pt-5 pb-4 border-b border-gray-100">
           <h3 className="font-bold text-gray-900 text-base">🧾 Facturar Garrafones</h3>

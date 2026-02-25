@@ -7,8 +7,8 @@ import LiveDriverCard from '../components/live/LiveDriverCard';
 import SimplirouteMap from '../components/live/SimplirouteMap';
 
 const REFRESH_MS = 2 * 60 * 1000;  // 2 min datos watify
-const MAP_MS     = 10_000;          // 10 s mostrando mapa
-const DATA_MS    = 15_000;          // 15 s mostrando datos
+const MAP_MS     = 30_000;          // 30 s mostrando mapa
+const DATA_MS    = 5 * 60 * 1000;  // 5 min mostrando datos
 
 const HEADER_H = 57; // px — altura del header sticky
 

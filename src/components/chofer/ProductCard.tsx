@@ -45,10 +45,12 @@ export default function ProductCard({ product, unitPrice }: Props) {
 
   return (
     <>
-      <div className={`bg-gradient-to-br ${gradient} rounded-2xl p-4 text-white shadow-md flex flex-col gap-2 min-h-[110px]`}>
+      <div className={`bg-gradient-to-br ${gradient} rounded-2xl p-3 text-white shadow-md flex flex-col gap-1.5 min-h-[88px]`}>
         <div className="flex-1">
-          <p className="font-bold text-lg leading-tight">{product.name}</p>
-          <p className="text-white/80 text-sm">${price.toFixed(0)}</p>
+          <div className="flex items-baseline gap-1.5">
+            <p className="font-bold text-xs leading-tight">{product.name}</p>
+            <p className="text-xs font-semibold" style={{ color: '#92ffe7' }}>${price.toFixed(0)}</p>
+          </div>
         </div>
         <div className="flex items-center justify-between">
           <button

@@ -60,17 +60,17 @@ export default function PaymentMethodCard({ method, selected, onSelect }: Props)
   return (
     <button
       onClick={onSelect}
-      className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl transition-all ${borderStyle} bg-white`}
+      className={`flex items-center gap-2 p-2 rounded-xl transition-all w-full ${borderStyle} bg-white`}
       style={selected ? { borderColor: method.color } : {}}
     >
       <div
-        className="w-11 h-11 rounded-xl flex items-center justify-center"
+        className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
         style={{ backgroundColor: method.color + '20', color: method.color }}
       >
-        <MethodIcon icon={method.icon} />
+        <MethodIcon icon={method.icon} size={16} />
       </div>
       <span
-        className="text-xs font-semibold"
+        className="text-xs font-semibold leading-tight text-left"
         style={{ color: selected ? method.color : '#6b7280' }}
       >
         {method.name}

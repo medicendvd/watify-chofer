@@ -204,7 +204,6 @@ export default function Chofer() {
 
         {/* Productos */}
         <div>
-          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Productos</h2>
           <div className="grid grid-cols-2 gap-3">
             {products.map(p => (
               <ProductCard key={p.id} product={p} unitPrice={getPrice(p)} />
@@ -217,7 +216,6 @@ export default function Chofer() {
 
         {/* Método de pago */}
         <div>
-          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Método de pago</h2>
           <div className="space-y-2">
             <div className="grid grid-cols-3 gap-2">
               {PAYMENT_METHODS.slice(0, 3).map(pm => (

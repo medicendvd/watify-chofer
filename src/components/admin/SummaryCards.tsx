@@ -22,12 +22,12 @@ export default function SummaryCards({ data }: Props) {
       <div className="space-y-4">
 
         {/* Total del día */}
-        <div className="bg-gradient-to-br from-water-400 to-water-600 rounded-2xl p-5 text-white shadow-md">
-          <p className="text-white/70 text-sm font-medium uppercase tracking-wide">Total del día</p>
-          <p className="text-4xl font-bold mt-1">
+        <div className="bg-gradient-to-br from-water-400 to-water-600 rounded-2xl p-5 shadow-md">
+          <p className="text-sm font-medium uppercase tracking-wide" style={{ color: '#232949' }}>Total del día</p>
+          <p className="text-4xl font-bold mt-1" style={{ color: '#232949' }}>
             ${Number(data.grand_total).toLocaleString('es-MX', { minimumFractionDigits: 0 })}
           </p>
-          <p className="text-white/60 text-xs mt-1">
+          <p className="text-xs mt-1" style={{ color: '#232949' }}>
             {data.by_method.reduce((s, m) => s + m.count, 0)} ventas
           </p>
         </div>

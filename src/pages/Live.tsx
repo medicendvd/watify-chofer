@@ -233,8 +233,8 @@ export default function Live() {
             </div>
           )}
           {!loading && routes.length > 0 && (
-            <div className="px-4 py-6 max-w-7xl mx-auto">
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className="px-4 py-3 max-w-7xl mx-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                 {groups.map(group => {
                   const allRoutes   = [...group.active, ...group.finished];
                   const choferName  = allRoutes[0]?.chofer_name ?? '';

@@ -272,6 +272,7 @@ export default function Chofer() {
           </div>
           {['Negocios a crédito', 'Distribuidores', 'Transferencia'].includes(selectedMethod.name) && (
             <CompanySelector
+              key={selectedMethod.id}
               companies={companies.filter(c => {
                 if (selectedMethod.name === 'Negocios a crédito') return c.payment_method_id === null;
                 if (selectedMethod.name === 'Distribuidores')     return c.payment_method_id === 5;

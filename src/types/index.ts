@@ -27,6 +27,8 @@ export interface Company {
   is_active: boolean;
   payment_method_id: number | null;
   special_prices: Record<number, number>; // product_id -> price
+  is_zone: boolean;
+  zone_priority: number | null;
 }
 
 export interface CartItem {

@@ -99,4 +99,19 @@ export const api = {
 
   // Simpliroute map
   getSimplirouteMap: () => request('/simpliroute/map.php'),
+
+  // Extra load (carga extra de garrafones)
+  getPendingExtraLoad: () =>
+    request('/routes/extra_load.php'),
+  sendExtraLoad: (route_id: number, cantidad: number) =>
+    request('/routes/extra_load.php', { method: 'POST', body: JSON.stringify({ route_id, cantidad }) }),
+  acceptExtraLoad: (id: number) =>
+    request('/routes/extra_load.php', { method: 'PATCH', body: JSON.stringify({ id }) }),
+
+  // Sucursal
+  getSucursalRoute: () => request('/sucursal/route.php'),
+  getSucursalProducts: () => request('/sucursal/products.php'),
+  getSucursalSummary: () => request('/sucursal/summary.php'),
+  createSucursalSale: (data: object) =>
+    request('/sucursal/pos.php', { method: 'POST', body: JSON.stringify(data) }),
 };

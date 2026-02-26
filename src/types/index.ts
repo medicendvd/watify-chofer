@@ -1,4 +1,4 @@
-export type Role = 'Admin' | 'Visor' | 'Chofer';
+export type Role = 'Admin' | 'Visor' | 'Chofer' | 'Sucursal';
 
 export interface User {
   id: number;
@@ -184,6 +184,7 @@ export interface WeeklyDayData {
   negocios: number;
   link: number;
   tarjeta: number;
+  transferencia: number;
   nuevos: number;
   facturado: number;
   total: number;
@@ -229,6 +230,30 @@ export interface SimplirouteRoute {
 export interface SimplirouteMapData {
   routes: SimplirouteRoute[];
   date: string;
+}
+
+export interface ExtraLoad {
+  id: number;
+  route_id: number;
+  cantidad: number;
+  status: 'pending' | 'accepted';
+  created_at: string;
+}
+
+export interface SucursalProduct {
+  id: number;
+  name: string;
+  base_price: number;
+  display_order: number;
+}
+
+export interface SucursalSummary {
+  date: string;
+  route_id: number | null;
+  total: number;
+  transaction_count: number;
+  by_method: { method: string; color: string; icon: string; total: number; count: number }[];
+  by_product: { product: string; units: number; total: number }[];
 }
 
 export interface DashboardData {

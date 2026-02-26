@@ -30,9 +30,10 @@ const ROWS: { key: keyof WeeklyDayData; label: string; highlight?: boolean; sobr
   { key: 'efectivo',  label: 'Total sobre del día', sobre: true },
   { key: 'facturado', label: 'Efectivo facturado' },
   { key: 'nuevos',    label: 'Gf. Nuevos' },
-  { key: 'negocios',  label: 'Empresas',  collapsible: true },
-  { key: 'link',      label: 'Link',      collapsible: true },
-  { key: 'tarjeta',   label: 'Tarjeta',   collapsible: true },
+  { key: 'negocios',      label: 'Empresas',      collapsible: true },
+  { key: 'link',          label: 'Link',          collapsible: true },
+  { key: 'tarjeta',       label: 'Tarjeta',       collapsible: true },
+  { key: 'transferencia', label: 'Transferencia', collapsible: true },
   { key: 'total',     label: 'Total',     highlight: true },
 ];
 

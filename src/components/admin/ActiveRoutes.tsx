@@ -260,6 +260,100 @@ function FacturarModal({ routeId, maxGarrafones, facturas, onClose, onRefresh }:
   );
 }
 
+// ── Modal envío de carga extra ───────────────────────────────────────────────
+interface SendLoadModalProps {
+  routeId: number;
+  choferName: string;
+  onClose: () => void;
+}
+
+function SendLoadModal({ routeId, choferName, onClose }: SendLoadModalProps) {
+  const [cantidad, setCantidad] = useState('');
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  const qty = parseInt(cantidad, 10);
+
+  const handleSend = async () => {
+    if (!qty || qty <= 0) return;
+    setSending(true);
+    try {
+      await api.sendExtraLoad(routeId, qty);
+      setSent(true);
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : 'Error al enviar');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-[9999] flex items-end sm:items-center justify-center p-4">
+      <div className="bg-white rounded-3xl w-full max-w-xs shadow-2xl overflow-hidden">
+        <div className="px-5 pt-5 pb-4 border-b border-gray-100">
+          <h3 className="font-bold text-gray-900 text-base">🎰 Enviar carga extra</h3>
+          <p className="text-xs text-gray-400 mt-0.5">Para {choferName}</p>
+        </div>
+
+        {sent ? (
+          <div className="px-5 py-8 text-center">
+            <p className="text-4xl mb-2">✅</p>
+            <p className="font-semibold text-gray-700">¡Enviado!</p>
+            <p className="text-xs text-gray-400 mt-1">{qty} garrafones en camino al chofer</p>
+          </div>
+        ) : (
+          <div className="px-5 py-4 space-y-4">
+            <div>
+              <label className="text-xs font-semibold text-gray-500 block mb-2">
+                ¿Cuántos garrafones?
+              </label>
+              <div className="flex items-center gap-3 justify-center">
+                <button
+                  onClick={() => setCantidad(String(Math.max(1, (qty || 0) - 1)))}
+                  className="w-10 h-10 rounded-full bg-gray-100 text-gray-600 font-bold text-xl flex items-center justify-center"
+                >
+                  −
+                </button>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  value={cantidad}
+                  onChange={e => setCantidad(e.target.value)}
+                  placeholder="0"
+                  className="w-16 text-center text-2xl font-bold border border-gray-200 rounded-xl py-1 focus:outline-none focus:ring-2 focus:ring-amber-300"
+                />
+                <button
+                  onClick={() => setCantidad(String((qty || 0) + 1))}
+                  className="w-10 h-10 rounded-full bg-gray-100 text-gray-600 font-bold text-xl flex items-center justify-center"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+            <button
+              onClick={handleSend}
+              disabled={sending || !qty || qty <= 0}
+              className="w-full py-3 bg-amber-500 text-white rounded-2xl text-sm font-semibold disabled:opacity-50 hover:bg-amber-600 transition-colors"
+            >
+              {sending ? 'Enviando...' : 'Enviar'}
+            </button>
+          </div>
+        )}
+
+        <div className="px-5 pb-5">
+          <button
+            onClick={onClose}
+            className="w-full py-2.5 border border-gray-200 rounded-xl text-sm text-gray-500 hover:bg-gray-50"
+          >
+            {sent ? 'Cerrar' : 'Cancelar'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Tarjeta de ruta ─────────────────────────────────────────────────────────
 interface RouteCardProps {
   route: ActiveDriverRoute;
@@ -274,6 +368,7 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
   const [editingGarrafones, setEditingGarrafones] = useState(false);
   const [garrafonesInput, setGarrafonesInput] = useState(route.garrafones.cargados);
   const [savingGarrafones, setSavingGarrafones] = useState(false);
+  const [sendLoadOpen, setSendLoadOpen] = useState(false);
 
   const handleSaveGarrafones = async () => {
     if (garrafonesInput <= 0) return;
@@ -568,6 +663,25 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
             tx={editingTx}
             onSave={() => { setEditingTx(null); onRefresh?.(); }}
             onClose={() => setEditingTx(null)}
+          />
+        )}
+
+        {/* Botón enviar carga extra — solo rutas activas */}
+        {!muted && (
+          <button
+            onClick={() => setSendLoadOpen(true)}
+            className="w-full py-2.5 rounded-xl text-sm font-semibold border-2 border-amber-400 text-amber-600 hover:bg-amber-50 transition-colors flex items-center justify-center gap-1.5"
+          >
+            🎰 Enviar carga extra
+          </button>
+        )}
+
+        {/* Modal envío de carga extra */}
+        {sendLoadOpen && (
+          <SendLoadModal
+            routeId={route.route_id}
+            choferName={route.chofer_name}
+            onClose={() => setSendLoadOpen(false)}
           />
         )}
 

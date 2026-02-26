@@ -41,6 +41,14 @@ function MethodIcon({ icon, size = 22 }: { icon: string; size?: number }) {
           <polyline points="9 22 9 12 15 12 15 22"/>
         </svg>
       );
+    case 'arrow-left-right':
+      return (
+        <svg width={s} height={s} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+          <path d="M8 7l-5 5 5 5"/>
+          <path d="M3 12h18"/>
+          <path d="M16 7l5 5-5 5"/>
+        </svg>
+      );
     default:
       return null;
   }

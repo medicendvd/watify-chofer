@@ -16,8 +16,9 @@ $routesStmt = $pdo->query("
            u.id AS user_id, u.name AS chofer_name
     FROM routes r
     JOIN users u ON u.id = r.user_id
-    WHERE r.status = 'active'
-       OR (r.status = 'finished' AND DATE(r.started_at) = CURDATE())
+    WHERE (r.status = 'active'
+       OR (r.status = 'finished' AND DATE(r.started_at) = CURDATE()))
+      AND u.role != 'Sucursal'
     ORDER BY
       CASE r.status WHEN 'active' THEN 0 ELSE 1 END,
       u.name,

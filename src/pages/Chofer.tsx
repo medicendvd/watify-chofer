@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuthContext } from '../store/authContext';
 import { useCartStore } from '../store/cartStore';
 import { api } from '../lib/api';
-import type { Product, PaymentMethod, Company, Transaction, Route } from '../types';
+import type { Product, PaymentMethod, Company, Transaction, Route, ExtraLoad } from '../types';
 import ProductCard from '../components/chofer/ProductCard';
 import CartSummary from '../components/chofer/CartSummary';
 import PaymentMethodCard from '../components/chofer/PaymentMethodCard';
@@ -13,14 +13,16 @@ import GarrafonesSetup from '../components/chofer/GarrafonesSetup';
 import GarrafonesCounter from '../components/chofer/GarrafonesCounter';
 import BrokenGarrafonModal from '../components/chofer/BrokenGarrafonModal';
 import FinalizarRutaModal from '../components/chofer/FinalizarRutaModal';
+import ExtraLoadModal from '../components/chofer/ExtraLoadModal';
 
 
 const PAYMENT_METHODS: PaymentMethod[] = [
-  { id: 1, name: 'Efectivo',             color: '#22c55e', icon: 'banknote',    is_active: true },
-  { id: 2, name: 'Tarjeta',              color: '#3b82f6', icon: 'credit-card', is_active: true },
-  { id: 4, name: 'Link',                 color: '#f97316', icon: 'smartphone',  is_active: true },
-  { id: 3, name: 'Negocios a crédito',   color: '#7c3aed', icon: 'building-2',  is_active: true },
-  { id: 5, name: 'Negocios en Efectivo', color: '#0d9488', icon: 'store',       is_active: true },
+  { id: 1, name: 'Efectivo',           color: '#22c55e', icon: 'banknote',         is_active: true },
+  { id: 2, name: 'Tarjeta',            color: '#3b82f6', icon: 'credit-card',      is_active: true },
+  { id: 4, name: 'Link',               color: '#f97316', icon: 'smartphone',       is_active: true },
+  { id: 3, name: 'Negocios a crédito', color: '#7c3aed', icon: 'building-2',       is_active: true },
+  { id: 6, name: 'Transferencia',      color: '#0369a1', icon: 'arrow-left-right', is_active: true },
+  { id: 5, name: 'Distribuidores',     color: '#0d9488', icon: 'store',            is_active: true },
 ];
 
 export default function Chofer() {
@@ -54,6 +56,9 @@ export default function Chofer() {
   const [showBroken, setShowBroken]           = useState(false);
   const [showFinalizar, setShowFinalizar]     = useState(false);
 
+  // Carga extra pendiente
+  const [pendingLoad, setPendingLoad] = useState<ExtraLoad | null>(null);
+
   // Al cargar: verificar ruta activa
   useEffect(() => {
     api.getActiveRoute()
@@ -80,6 +85,25 @@ export default function Chofer() {
     setRoute(r);
   };
 
+  // Polling de carga extra cada 10 s
+  useEffect(() => {
+    if (!route) return;
+    const poll = async () => {
+      const load = await api.getPendingExtraLoad().catch(() => null);
+      if (load) setPendingLoad(load as ExtraLoad);
+    };
+    poll();
+    const id = setInterval(poll, 10_000);
+    return () => clearInterval(id);
+  }, [route?.id]);
+
+  const handleAcceptLoad = async () => {
+    if (!pendingLoad) return;
+    await api.acceptExtraLoad(pendingLoad.id);
+    setPendingLoad(null);
+    await refreshRoute();
+  };
+
   const company = companies.find(c => c.id === selectedCompany) ?? null;
 
   const getPrice = (product: Product): number => {
@@ -100,7 +124,7 @@ export default function Chofer() {
   const handleRegister = () => {
     setError('');
     if (items.length === 0) { setError('Agrega al menos un producto'); return; }
-    if (['Negocios a crédito', 'Negocios en Efectivo'].includes(selectedMethod.name) && !selectedCompany) {
+    if (['Negocios a crédito', 'Distribuidores', 'Transferencia'].includes(selectedMethod.name) && !selectedCompany) {
       setError('Selecciona la empresa'); return;
     }
     if ((selectedMethod.name === 'Link' || selectedMethod.name === 'Tarjeta') && !customerName.trim()) {
@@ -232,7 +256,7 @@ export default function Chofer() {
                 />
               ))}
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               {PAYMENT_METHODS.slice(3).map(pm => (
                 <PaymentMethodCard
                   key={pm.id}
@@ -240,19 +264,20 @@ export default function Chofer() {
                   selected={selectedMethod.id === pm.id}
                   onSelect={() => {
                     setSelectedMethod(pm);
-                    if (pm.name !== 'Negocios a crédito' && pm.name !== 'Negocios en Efectivo') setSelectedCompany(null);
+                    if (!['Negocios a crédito', 'Distribuidores', 'Transferencia'].includes(pm.name)) setSelectedCompany(null);
                   }}
                 />
               ))}
             </div>
           </div>
-          {(selectedMethod.name === 'Negocios a crédito' || selectedMethod.name === 'Negocios en Efectivo') && (
+          {['Negocios a crédito', 'Distribuidores', 'Transferencia'].includes(selectedMethod.name) && (
             <CompanySelector
-              companies={companies.filter(c =>
-                selectedMethod.name === 'Negocios a crédito'
-                  ? c.payment_method_id === null
-                  : c.payment_method_id !== null
-              )}
+              companies={companies.filter(c => {
+                if (selectedMethod.name === 'Negocios a crédito') return c.payment_method_id === null;
+                if (selectedMethod.name === 'Distribuidores')     return c.payment_method_id === 5;
+                if (selectedMethod.name === 'Transferencia')      return c.payment_method_id === 6;
+                return false;
+              })}
               value={selectedCompany}
               onChange={setSelectedCompany}
             />
@@ -391,6 +416,14 @@ export default function Chofer() {
             clearCart();
           }}
           onClose={() => setShowFinalizar(false)}
+        />
+      )}
+
+      {/* Modal carga extra */}
+      {pendingLoad && (
+        <ExtraLoadModal
+          load={pendingLoad}
+          onAccept={handleAcceptLoad}
         />
       )}
     </div>

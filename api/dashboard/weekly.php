@@ -28,7 +28,7 @@ $stmt = $pdo->prepare("
     JOIN payment_methods pm ON pm.id = t.payment_method_id
     JOIN users u            ON u.id  = t.user_id
     WHERE DATE(t.transaction_date) BETWEEN ? AND ?
-      AND u.role = 'Chofer'
+      AND u.role IN ('Chofer', 'Sucursal')
     GROUP BY u.id, DATE(t.transaction_date), pm.id
     ORDER BY u.name ASC, day ASC
 ");
@@ -69,7 +69,7 @@ $stmtNuevos = $pdo->prepare("
     JOIN users u        ON u.id  = t.user_id
     WHERE p.name LIKE '%Nuevo%'
       AND DATE(t.transaction_date) BETWEEN ? AND ?
-      AND u.role = 'Chofer'
+      AND u.role IN ('Chofer', 'Sucursal')
     GROUP BY u.id, DATE(t.transaction_date)
 ");
 $stmtNuevos->execute([$mondayStr, $sundayStr]);
@@ -118,7 +118,7 @@ foreach ($stmtConf->fetchAll() as $r) {
 }
 
 // Construir mapa user_id → { name, days: { day → {...} } }
-$emptyDay = ['efectivo' => 0, 'negocios' => 0, 'link' => 0, 'tarjeta' => 0, 'nuevos' => 0, 'facturado' => 0];
+$emptyDay = ['efectivo' => 0, 'negocios' => 0, 'link' => 0, 'tarjeta' => 0, 'nuevos' => 0, 'facturado' => 0, 'transferencia' => 0];
 $driverMap = [];
 foreach ($rows as $r) {
     $uid    = $r['user_id'];
@@ -129,10 +129,11 @@ foreach ($rows as $r) {
     match ($method) {
         'Efectivo', 'Negocios en Efectivo' =>
             $driverMap[$uid]['days'][$day]['efectivo'] += (float)$r['total'],
-        'Negocios' => $driverMap[$uid]['days'][$day]['negocios'] += (float)$r['total'],
-        'Link'     => $driverMap[$uid]['days'][$day]['link']     += (float)$r['total'],
-        'Tarjeta'  => $driverMap[$uid]['days'][$day]['tarjeta']  += (float)$r['total'],
-        default    => null,
+        'Negocios'      => $driverMap[$uid]['days'][$day]['negocios']      += (float)$r['total'],
+        'Link'          => $driverMap[$uid]['days'][$day]['link']          += (float)$r['total'],
+        'Tarjeta'       => $driverMap[$uid]['days'][$day]['tarjeta']       += (float)$r['total'],
+        'Transferencia' => $driverMap[$uid]['days'][$day]['transferencia'] += (float)$r['total'],
+        default         => null,
     };
 }
 foreach ($nuevosByDriverDay as $uid => $dayMap) {
@@ -160,17 +161,20 @@ foreach ($driverMap as $uid => $driverData) {
         $incData       = $incidentsByDriverDay[$uid][$d] ?? ['total' => 0.0, 'list' => []];
         $incidencias   = $incData['total'];
         $incidentsList = $incData['list'];
-        $efectivoNeto = max(0, $data['efectivo'] - $incidencias);
-        $total        = $efectivoNeto + $data['negocios'] + $data['link'] + $data['tarjeta'];
+        $facturadoAmount = $data['facturado'] ?? 0;
+        $efectivoNeto    = max(0, $data['efectivo'] - $incidencias);
+        $sobre           = max(0, $efectivoNeto - $facturadoAmount);
+        $total           = $efectivoNeto + $data['negocios'] + $data['link'] + $data['tarjeta'] + $data['transferencia'];
         $driverDays[] = [
             'date'           => $d,
-            'efectivo'       => $efectivoNeto,
+            'efectivo'       => $sobre,
             'incidencias'    => $incidencias,
             'incidents_list' => $incidentsList,
             'facturado'      => $data['facturado'],
             'negocios'       => $data['negocios'],
             'link'           => $data['link'],
             'tarjeta'        => $data['tarjeta'],
+            'transferencia'  => $data['transferencia'],
             'nuevos'         => $data['nuevos'],
             'total'          => $total,
             'confirmed'      => $confirmedByDriverDay[$uid][$d] ?? false,

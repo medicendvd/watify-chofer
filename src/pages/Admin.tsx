@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import logo from '../assets/logo.png';
 import { useAuthContext } from '../store/authContext';
 import { api } from '../lib/api';
-import type { DashboardData, ActiveDriverRoute, LinkPayment } from '../types';
+import type { DashboardData, ActiveDriverRoute, LinkPayment, SucursalSummary } from '../types';
 import { Link } from 'react-router-dom';
 import SummaryCards from '../components/admin/SummaryCards';
 import DriverSummary from '../components/admin/DriverSummary';
@@ -12,6 +12,8 @@ import LinkPaymentsPanel from '../components/admin/LinkPaymentsPanel';
 import PaymentsTab from '../components/admin/PaymentsTab';
 import WeeklyTable from '../components/admin/WeeklyTable';
 import IncidentModal from '../components/admin/IncidentModal';
+import SucursalPOS from '../components/admin/SucursalPOS';
+import SucursalSummaryTab from '../components/admin/SucursalSummaryTab';
 import type { WeeklySummary } from '../types';
 
 const REFRESH_INTERVAL_MS = 10 * 60 * 1000; // 10 minutos
@@ -25,7 +27,7 @@ export default function Admin() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [tab, setTab] = useState<'resumen' | 'choferes' | 'graficas' | 'pagos'>('choferes');
+  const [tab, setTab] = useState<'resumen' | 'choferes' | 'graficas' | 'pagos' | 'sucursal'>('choferes');
 
   // Resumen semanal
   const [weekly, setWeekly] = useState<WeeklySummary | null>(null);
@@ -52,6 +54,18 @@ export default function Admin() {
     await api.adjustEfectivo(choferId, date, prevEfectivo, newEfectivo, description);
     await loadWeekly();
   };
+
+  // Sucursal
+  const [sucursalSummary, setSucursalSummary] = useState<SucursalSummary | null>(null);
+  const [sucursalLoading, setSucursalLoading] = useState(false);
+  const loadSucursalSummary = useCallback(async () => {
+    setSucursalLoading(true);
+    try {
+      setSucursalSummary(await api.getSucursalSummary() as SucursalSummary);
+    } catch { /* silencioso */ } finally {
+      setSucursalLoading(false);
+    }
+  }, []);
 
   // Pagos por Link
   const [linkPayments, setLinkPayments] = useState<LinkPayment[]>([]);
@@ -103,7 +117,8 @@ export default function Admin() {
     loadActiveRoutes();
     loadLinkPayments();
     loadWeekly();
-  }, [loadActiveRoutes, loadLinkPayments, loadWeekly]);
+    loadSucursalSummary();
+  }, [loadActiveRoutes, loadLinkPayments, loadWeekly, loadSucursalSummary]);
 
   // Auto-refresh todo cada 10 min
   useEffect(() => {
@@ -165,6 +180,7 @@ export default function Admin() {
         <div className="flex max-w-7xl mx-auto">
           {([
             { key: 'choferes', label: 'Choferes' },
+            { key: 'sucursal', label: '🏪 Sucursal' },
             { key: 'resumen',  label: 'Resumen' },
             { key: 'graficas', label: 'Gráficas' },
             { key: 'pagos',    label: 'Pagos' },
@@ -261,9 +277,16 @@ export default function Admin() {
           <PaymentsTab payments={linkPayments} onRefresh={loadLinkPayments} />
         )}
 
+        {tab === 'sucursal' && (
+          <SucursalSummaryTab summary={sucursalSummary} loading={sucursalLoading} />
+        )}
+
         {/* Tab Choferes */}
         {tab === 'choferes' && (
           <div className="space-y-8">
+
+            {/* POS Sucursal */}
+            <SucursalPOS onSaleComplete={loadSucursalSummary} />
 
             {/* Rutas en vivo */}
             <div>

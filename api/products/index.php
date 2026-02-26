@@ -7,5 +7,5 @@ cors();
 requireAuth();
 
 $pdo  = getDB();
-$stmt = $pdo->query('SELECT id, name, base_price, display_order FROM products ORDER BY display_order ASC');
+$stmt = $pdo->query('SELECT id, name, base_price, display_order FROM products WHERE sucursal_only = 0 ORDER BY display_order ASC');
 jsonResponse($stmt->fetchAll());

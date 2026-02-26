@@ -1,0 +1,5 @@
+# Bloquear acceso HTTP directo a archivos de configuración
+<FilesMatch ".*">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>

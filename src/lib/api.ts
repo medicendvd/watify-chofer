@@ -67,6 +67,11 @@ export const api = {
     request('/dashboard/incidents.php', { method: 'POST', body: JSON.stringify({ chofer_id, description, amount }) }),
   adjustEfectivo: (chofer_id: number, date: string, prev_efectivo: number, new_efectivo: number, description: string) =>
     request('/dashboard/incidents.php', { method: 'POST', body: JSON.stringify({ chofer_id, date, type: 'ajuste', prev_efectivo, new_efectivo, description }) }),
+  withdrawCash: (chofer_id: number, date: string, description: string, amount: number) =>
+    request('/dashboard/incidents.php', {
+      method: 'POST',
+      body: JSON.stringify({ chofer_id, date, description, amount }),
+    }),
 
   // Routes
   getActiveRoute: () => request('/routes/index.php'),
@@ -114,4 +119,8 @@ export const api = {
   getSucursalSummary: () => request('/sucursal/summary.php'),
   createSucursalSale: (data: object) =>
     request('/sucursal/pos.php', { method: 'POST', body: JSON.stringify(data) }),
+
+  // Auth - change password
+  changePassword: (current_password: string, new_password: string) =>
+    request('/auth/change_password.php', { method: 'POST', body: JSON.stringify({ current_password, new_password }) }),
 };

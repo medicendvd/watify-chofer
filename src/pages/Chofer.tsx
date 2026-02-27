@@ -14,6 +14,7 @@ import GarrafonesCounter from '../components/chofer/GarrafonesCounter';
 import BrokenGarrafonModal from '../components/chofer/BrokenGarrafonModal';
 import FinalizarRutaModal from '../components/chofer/FinalizarRutaModal';
 import ExtraLoadModal from '../components/chofer/ExtraLoadModal';
+import ProfileModal from '../components/shared/ProfileModal';
 
 
 const PAYMENT_METHODS: PaymentMethod[] = [
@@ -58,6 +59,9 @@ export default function Chofer() {
 
   // Carga extra pendiente
   const [pendingLoad, setPendingLoad] = useState<ExtraLoad | null>(null);
+
+  // Perfil
+  const [showProfile, setShowProfile] = useState(false);
 
   // Al cargar: verificar ruta activa
   useEffect(() => {
@@ -193,7 +197,10 @@ export default function Chofer() {
     <div className="min-h-screen bg-gray-50 pb-8">
       {/* Header */}
       <div className="bg-water-600 text-white px-4 py-2 shadow-md flex justify-between items-center">
-        <p className="text-sm font-semibold capitalize">{user?.name}</p>
+        <button onClick={() => setShowProfile(true)}
+          className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center font-bold text-sm uppercase transition-colors">
+          {user?.name[0]}
+        </button>
         <button onClick={logout}
           className="text-water-200 hover:text-white text-xs py-1 px-2.5 border border-water-400 rounded-lg transition-colors">
           Salir
@@ -427,6 +434,9 @@ export default function Chofer() {
           onAccept={handleAcceptLoad}
         />
       )}
+
+      {/* Modal perfil */}
+      {showProfile && <ProfileModal user={user!} onClose={() => setShowProfile(false)} />}
     </div>
   );
 }

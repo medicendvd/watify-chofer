@@ -265,9 +265,10 @@ interface SendLoadModalProps {
   routeId: number;
   choferName: string;
   onClose: () => void;
+  onSent?: () => void;
 }
 
-function SendLoadModal({ routeId, choferName, onClose }: SendLoadModalProps) {
+function SendLoadModal({ routeId, choferName, onClose, onSent }: SendLoadModalProps) {
   const [cantidad, setCantidad] = useState('');
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
@@ -280,6 +281,7 @@ function SendLoadModal({ routeId, choferName, onClose }: SendLoadModalProps) {
     try {
       await api.sendExtraLoad(routeId, qty);
       setSent(true);
+      onSent?.();
     } catch (e: unknown) {
       alert(e instanceof Error ? e.message : 'Error al enviar');
     } finally {
@@ -679,6 +681,7 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
             routeId={route.route_id}
             choferName={route.chofer_name}
             onClose={() => setSendLoadOpen(false)}
+            onSent={onRefresh}
           />
         )}
 

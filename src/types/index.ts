@@ -192,6 +192,7 @@ export interface WeeklyDayData {
   facturado: number;
   total: number;
   confirmed: boolean;
+  confirmed_by_name?: string | null;
 }
 
 export interface WeeklyDriverData {

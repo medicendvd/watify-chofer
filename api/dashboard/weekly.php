@@ -107,14 +107,15 @@ foreach ($stmtInc->fetchAll() as $r) {
 
 // Confirmaciones por chofer y día
 $stmtConf = $pdo->prepare("
-    SELECT chofer_id, `date`
-    FROM weekly_confirmations
-    WHERE `date` BETWEEN ? AND ?
+    SELECT wc.chofer_id, wc.`date`, u.name AS confirmed_by_name
+    FROM weekly_confirmations wc
+    LEFT JOIN users u ON u.id = wc.confirmed_by
+    WHERE wc.`date` BETWEEN ? AND ?
 ");
 $stmtConf->execute([$mondayStr, $sundayStr]);
 $confirmedByDriverDay = [];
 foreach ($stmtConf->fetchAll() as $r) {
-    $confirmedByDriverDay[$r['chofer_id']][$r['date']] = true;
+    $confirmedByDriverDay[$r['chofer_id']][$r['date']] = $r['confirmed_by_name'] ?? '';
 }
 
 // Construir mapa user_id → { name, days: { day → {...} } }
@@ -177,7 +178,8 @@ foreach ($driverMap as $uid => $driverData) {
             'transferencia'  => $data['transferencia'],
             'nuevos'         => $data['nuevos'],
             'total'          => $total,
-            'confirmed'      => $confirmedByDriverDay[$uid][$d] ?? false,
+            'confirmed'          => isset($confirmedByDriverDay[$uid][$d]),
+            'confirmed_by_name'  => $confirmedByDriverDay[$uid][$d] ?? null,
         ];
     }
     $drivers[] = [

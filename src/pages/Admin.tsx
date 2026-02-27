@@ -14,6 +14,7 @@ import WeeklyTable from '../components/admin/WeeklyTable';
 import IncidentModal from '../components/admin/IncidentModal';
 import SucursalPOS from '../components/admin/SucursalPOS';
 import SucursalSummaryTab from '../components/admin/SucursalSummaryTab';
+import ProfileModal from '../components/shared/ProfileModal';
 import type { WeeklySummary } from '../types';
 
 const REFRESH_INTERVAL_MS = 10 * 60 * 1000; // 10 minutos
@@ -32,6 +33,9 @@ export default function Admin() {
   // Resumen semanal
   const [weekly, setWeekly] = useState<WeeklySummary | null>(null);
   const [showIncidentModal, setShowIncidentModal] = useState(false);
+
+  // Perfil
+  const [showProfile, setShowProfile] = useState(false);
 
   const loadWeekly = useCallback(async () => {
     try {
@@ -52,6 +56,11 @@ export default function Admin() {
 
   const handleAdjustEfectivo = async (choferId: number, date: string, prevEfectivo: number, newEfectivo: number, description: string) => {
     await api.adjustEfectivo(choferId, date, prevEfectivo, newEfectivo, description);
+    await loadWeekly();
+  };
+
+  const handleWithdrawCash = async (choferId: number, date: string, description: string, amount: number) => {
+    await api.withdrawCash(choferId, date, description, amount);
     await loadWeekly();
   };
 
@@ -166,6 +175,12 @@ export default function Admin() {
               Actualizar
             </button>
             <button
+              onClick={() => setShowProfile(true)}
+              className="bg-[#1a2fa8] hover:bg-[#1626a0] text-white text-xs font-semibold py-2 px-3.5 rounded-xl transition-colors shadow-sm"
+            >
+              👤 Perfil
+            </button>
+            <button
               onClick={logout}
               className="bg-[#1a2fa8] hover:bg-[#1626a0] text-white text-xs font-semibold py-2 px-3.5 rounded-xl transition-colors shadow-sm"
             >
@@ -245,6 +260,7 @@ export default function Admin() {
                         canConfirm={user?.role === 'Admin'}
                         onConfirm={handleConfirmDay}
                         onAdjustEfectivo={handleAdjustEfectivo}
+                        onWithdrawCash={handleWithdrawCash}
                       />
                     ))}
                     {user?.role === 'Admin' && (
@@ -325,6 +341,9 @@ export default function Admin() {
           </div>
         )}
       </div>
+
+      {/* Modal perfil */}
+      {showProfile && <ProfileModal user={user!} onClose={() => setShowProfile(false)} />}
     </div>
   );
 }

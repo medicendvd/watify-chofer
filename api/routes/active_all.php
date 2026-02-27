@@ -189,6 +189,14 @@ foreach ($routes as $route) {
         'cliente'  => $f['cliente'],
     ], $facturasStmt->fetchAll());
 
+    // Incidencias del día (deducciones y ajustes) para este chofer
+    $routeDate = date('Y-m-d', strtotime($route['started_at']));
+    $incStmt = $pdo->prepare(
+        "SELECT COALESCE(SUM(amount), 0) AS total FROM weekly_incidents WHERE chofer_id = ? AND `date` = ?"
+    );
+    $incStmt->execute([(int)$route['user_id'], $routeDate]);
+    $incidenciasTotal = (float)$incStmt->fetchColumn();
+
     $result[] = [
         'route_id'      => $routeId,
         'chofer_id'     => (int)$route['user_id'],
@@ -207,8 +215,9 @@ foreach ($routes as $route) {
         'companies'      => $companies,
         'total_negocios' => (float)$totalNegocios,
         'transactions'   => $transactions,
-        'facturas'       => $facturas,
-        'precio_recarga' => $precioRecarga,
+        'facturas'         => $facturas,
+        'precio_recarga'   => $precioRecarga,
+        'incidencias_total' => $incidenciasTotal,
         'garrafones'    => [
             'cargados'          => $loaded,
             'recargas_vendidas' => $recargas,

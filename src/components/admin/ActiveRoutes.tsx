@@ -407,7 +407,8 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
   const facturas = route.facturas ?? [];
   const garrafonesFact = facturas.reduce((s, f) => s + f.cantidad, 0);
   const montoFacturado = garrafonesFact * route.precio_recarga;
-  const montoDelDia    = efectivo ? efectivo.total - montoFacturado : 0;
+  const incidencias    = route.incidencias_total ?? 0;
+  const montoDelDia    = efectivo ? Math.max(0, efectivo.total - montoFacturado - incidencias) : 0;
 
   const headerBg = muted ? 'bg-gray-400' : 'bg-[#1a2fa8]';
 

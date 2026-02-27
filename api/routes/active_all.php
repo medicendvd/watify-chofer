@@ -10,6 +10,10 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') jsonError('Método no permitido', 405)
 
 $pdo = getDB();
 
+// Precio base de Recarga (igual que weekly.php)
+$stmtPrecio = $pdo->query("SELECT base_price FROM products WHERE name LIKE '%Recarga%' ORDER BY display_order LIMIT 1");
+$precioRecarga = (float)($stmtPrecio->fetchColumn() ?: 45);
+
 // Rutas activas + rutas finalizadas hoy, ordenadas: activas primero, luego por nombre
 $routesStmt = $pdo->query("
     SELECT r.id, r.garrafones_loaded, r.status, r.started_at, r.finished_at,
@@ -204,6 +208,7 @@ foreach ($routes as $route) {
         'total_negocios' => (float)$totalNegocios,
         'transactions'   => $transactions,
         'facturas'       => $facturas,
+        'precio_recarga' => $precioRecarga,
         'garrafones'    => [
             'cargados'          => $loaded,
             'recargas_vendidas' => $recargas,

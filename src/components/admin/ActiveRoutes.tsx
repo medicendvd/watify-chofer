@@ -401,13 +401,10 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
   );
   const g = route.garrafones;
 
-  // Calcular split de efectivo si hay facturas
+  // Calcular split de efectivo si hay facturas (igual que weekly.php: garrafones × precio fijo de Recarga)
   const facturas = route.facturas ?? [];
   const garrafonesFact = facturas.reduce((s, f) => s + f.cantidad, 0);
-  const precioPromedio = efectivo && efectivo.garrafones > 0
-    ? efectivo.total / efectivo.garrafones
-    : 0;
-  const montoFacturado = garrafonesFact * precioPromedio;
+  const montoFacturado = garrafonesFact * route.precio_recarga;
   const montoDelDia    = efectivo ? efectivo.total - montoFacturado : 0;
 
   const headerBg = muted ? 'bg-gray-400' : 'bg-[#1a2fa8]';

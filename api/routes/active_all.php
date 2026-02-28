@@ -197,6 +197,18 @@ foreach ($routes as $route) {
     $incStmt->execute([(int)$route['user_id'], $routeDate]);
     $incidenciasTotal = (float)$incStmt->fetchColumn();
 
+    // Efectivo solo de HOY (para que el sobre del día coincida con el resumen semanal)
+    $efectivoHoyStmt = $pdo->prepare("
+        SELECT COALESCE(SUM(t.total), 0) AS total
+        FROM transactions t
+        JOIN payment_methods pm ON pm.id = t.payment_method_id
+        WHERE t.route_id = ?
+          AND pm.name IN ('Efectivo', 'Negocios en Efectivo')
+          AND DATE(t.transaction_date) = ?
+    ");
+    $efectivoHoyStmt->execute([$routeId, $routeDate]);
+    $efectivoHoy = (float)$efectivoHoyStmt->fetchColumn();
+
     $result[] = [
         'route_id'      => $routeId,
         'chofer_id'     => (int)$route['user_id'],
@@ -215,9 +227,10 @@ foreach ($routes as $route) {
         'companies'      => $companies,
         'total_negocios' => (float)$totalNegocios,
         'transactions'   => $transactions,
-        'facturas'         => $facturas,
-        'precio_recarga'   => $precioRecarga,
+        'facturas'          => $facturas,
+        'precio_recarga'    => $precioRecarga,
         'incidencias_total' => $incidenciasTotal,
+        'efectivo_hoy'      => $efectivoHoy,
         'garrafones'    => [
             'cargados'          => $loaded,
             'recargas_vendidas' => $recargas,

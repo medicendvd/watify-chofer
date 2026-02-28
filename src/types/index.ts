@@ -139,6 +139,7 @@ export interface ActiveDriverRoute {
   facturas: FacturaGarrafon[];
   precio_recarga: number;
   incidencias_total: number;
+  efectivo_hoy: number;
   transactions: {
     id: number;
     customer_name: string | null;

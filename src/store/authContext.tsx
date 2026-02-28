@@ -23,6 +23,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    const handler = () => setUser(null);
+    window.addEventListener('auth:expired', handler);
+    return () => window.removeEventListener('auth:expired', handler);
+  }, []);
+
   const login = async (name: string, password: string) => {
     const u = await api.login(name, password);
     setUser(u as User);

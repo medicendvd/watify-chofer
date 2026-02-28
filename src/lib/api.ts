@@ -13,6 +13,9 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   } catch {
     throw new Error(`Respuesta no-JSON del servidor [${res.status}]: ${text.slice(0, 300)}`);
   }
+  if (res.status === 401) {
+    window.dispatchEvent(new CustomEvent('auth:expired'));
+  }
   if (!res.ok) throw new Error((data as { error?: string }).error ?? 'Error de servidor');
   return data as T;
 }

@@ -581,7 +581,7 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
                   </p>
                 </div>
                 <p className="text-2xl font-bold text-green-700">
-                  ${Number(efectivo.total).toLocaleString('es-MX', { minimumFractionDigits: 0 })}
+                  ${efectivoHoy.toLocaleString('es-MX', { minimumFractionDigits: 0 })}
                 </p>
               </div>
 

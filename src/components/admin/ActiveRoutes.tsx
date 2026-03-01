@@ -787,7 +787,7 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
                 </p>
                 <p className="text-xs text-gray-400 text-center mt-1">
                   {route.transaction_count} venta{route.transaction_count !== 1 ? 's' : ''} ·{' '}
-                  ${Number(route.total_ventas).toLocaleString('es-MX', { minimumFractionDigits: 0 })} total
+                  ${(efectivoHoy + otrosMethods.reduce((s, m) => s + m.total, 0)).toLocaleString('es-MX', { minimumFractionDigits: 0 })} total
                 </p>
               </div>
               <div className="px-5 pb-5 flex gap-3">

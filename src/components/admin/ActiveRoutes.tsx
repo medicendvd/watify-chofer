@@ -375,6 +375,8 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
   const [dropTarget,   setDropTarget]   = useState<number | null>(null);
   const [moveModalTx,  setMoveModalTx]  = useState<AdminTx | null>(null);
   const [moveSaving,   setMoveSaving]   = useState(false);
+  const [finishConfirm, setFinishConfirm] = useState(false);
+  const [finishing,     setFinishing]     = useState(false);
 
   const handleSaveGarrafones = async () => {
     if (garrafonesInput <= 0) return;
@@ -410,6 +412,19 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
       alert(e instanceof Error ? e.message : 'Error al mover');
     } finally {
       setMoveSaving(false);
+    }
+  };
+
+  const handleFinishRoute = async () => {
+    setFinishing(true);
+    try {
+      await api.finishRoute(route.route_id);
+      setFinishConfirm(false);
+      onRefresh?.();
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : 'Error al finalizar');
+    } finally {
+      setFinishing(false);
     }
   };
 
@@ -745,6 +760,54 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
           >
             🎰 Enviar carga extra
           </button>
+        )}
+
+        {/* Botón finalizar ruta — solo rutas activas, para admin */}
+        {!muted && (
+          <button
+            onClick={() => setFinishConfirm(true)}
+            className="w-full py-2.5 rounded-xl text-sm font-semibold border-2 border-red-200 text-red-400 hover:bg-red-50 hover:border-red-400 hover:text-red-600 transition-colors flex items-center justify-center gap-1.5"
+          >
+            🏁 Finalizar ruta del chofer
+          </button>
+        )}
+
+        {/* Modal confirmación finalizar ruta */}
+        {finishConfirm && (
+          <div className="fixed inset-0 bg-black/50 z-[9999] flex items-end sm:items-center justify-center p-4">
+            <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden">
+              <div className="px-5 pt-5 pb-4 border-b border-gray-100">
+                <h3 className="font-bold text-gray-900 text-base">🏁 Finalizar ruta</h3>
+                <p className="text-xs text-gray-400 mt-0.5">Esta acción no se puede deshacer</p>
+              </div>
+              <div className="px-5 py-5">
+                <p className="text-sm text-gray-700 text-center">
+                  ¿Finalizar la ruta de{' '}
+                  <span className="font-bold text-gray-900">{route.chofer_name}</span>?
+                </p>
+                <p className="text-xs text-gray-400 text-center mt-1">
+                  {route.transaction_count} venta{route.transaction_count !== 1 ? 's' : ''} ·{' '}
+                  ${Number(route.total_ventas).toLocaleString('es-MX', { minimumFractionDigits: 0 })} total
+                </p>
+              </div>
+              <div className="px-5 pb-5 flex gap-3">
+                <button
+                  onClick={() => setFinishConfirm(false)}
+                  disabled={finishing}
+                  className="flex-1 py-3 border border-gray-200 rounded-2xl text-sm text-gray-500 disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleFinishRoute}
+                  disabled={finishing}
+                  className="flex-1 py-3 bg-red-500 text-white rounded-2xl text-sm font-semibold disabled:opacity-50 hover:bg-red-600 transition-colors"
+                >
+                  {finishing ? 'Finalizando...' : 'Finalizar'}
+                </button>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Modal envío de carga extra */}

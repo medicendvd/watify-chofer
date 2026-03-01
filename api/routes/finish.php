@@ -14,9 +14,14 @@ if (!$routeId) jsonError('route_id requerido');
 
 $pdo = getDB();
 
-// Verificar que la ruta pertenece al usuario
-$route = $pdo->prepare('SELECT * FROM routes WHERE id = ? AND user_id = ?');
-$route->execute([$routeId, $user['id']]);
+// Admin puede finalizar cualquier ruta; Chofer solo la suya
+if ($user['role'] === 'Admin') {
+    $route = $pdo->prepare('SELECT * FROM routes WHERE id = ?');
+    $route->execute([$routeId]);
+} else {
+    $route = $pdo->prepare('SELECT * FROM routes WHERE id = ? AND user_id = ?');
+    $route->execute([$routeId, $user['id']]);
+}
 $routeData = $route->fetch();
 if (!$routeData) jsonError('Ruta no encontrada', 404);
 

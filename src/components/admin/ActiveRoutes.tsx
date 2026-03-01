@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import type { ActiveDriverRoute, FacturaGarrafon } from '../../types';
 import { api } from '../../lib/api';
 
@@ -371,6 +371,10 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
   const [garrafonesInput, setGarrafonesInput] = useState(route.garrafones.cargados);
   const [savingGarrafones, setSavingGarrafones] = useState(false);
   const [sendLoadOpen, setSendLoadOpen] = useState(false);
+  const [draggingTxId, setDraggingTxId] = useState<number | null>(null);
+  const [dropTarget,   setDropTarget]   = useState<number | null>(null);
+  const [moveModalTx,  setMoveModalTx]  = useState<AdminTx | null>(null);
+  const [moveSaving,   setMoveSaving]   = useState(false);
 
   const handleSaveGarrafones = async () => {
     if (garrafonesInput <= 0) return;
@@ -386,9 +390,59 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
     }
   };
 
+  const handleMoveMethod = async (tx: AdminTx, newMethodId: number) => {
+    if (tx.payment_method_id === newMethodId) return;
+    setMoveSaving(true);
+    try {
+      await api.updateTransaction(tx.id, {
+        customer_name: tx.customer_name,
+        company_id: tx.company_id,
+        payment_method_id: newMethodId,
+        items: tx.items.map(i => ({
+          product_id: i.product_id,
+          quantity: i.quantity,
+          unit_price: i.unit_price,
+        })),
+      });
+      setMoveModalTx(null);
+      onRefresh?.();
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : 'Error al mover');
+    } finally {
+      setMoveSaving(false);
+    }
+  };
+
+  const dropZone = (targetMethodId: number): React.HTMLAttributes<HTMLDivElement> => ({
+    onDragOver(e: React.DragEvent<HTMLDivElement>) {
+      if (draggingTxId === null) return;
+      const tx = route.transactions.find(t => t.id === draggingTxId);
+      if (tx?.payment_method_id === targetMethodId) return;
+      e.preventDefault();
+      setDropTarget(targetMethodId);
+    },
+    onDragLeave(e: React.DragEvent<HTMLDivElement>) {
+      if (!(e.currentTarget as Node).contains(e.relatedTarget as Node)) {
+        setDropTarget(null);
+      }
+    },
+    onDrop(e: React.DragEvent<HTMLDivElement>) {
+      e.preventDefault();
+      if (draggingTxId !== null) {
+        const tx = route.transactions.find(t => t.id === draggingTxId);
+        if (tx) handleMoveMethod(tx, targetMethodId);
+      }
+      setDraggingTxId(null);
+      setDropTarget(null);
+    },
+  });
+
   const efectivoEntries = route.by_method.filter(
     m => m.method === 'Efectivo' || m.method === 'Negocios en Efectivo'
   );
+  const efectivoMethodId = efectivoEntries.find(m => m.method === 'Efectivo')?.id
+    ?? efectivoEntries[0]?.id
+    ?? 0;
   const efectivo = efectivoEntries.length > 0 ? {
     ...efectivoEntries[0],
     method:     'Efectivo',
@@ -570,7 +624,10 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
         {efectivo && (
           <div className="space-y-2">
             {/* Bloque principal */}
-            <div className="bg-green-50 border-2 border-green-200 rounded-xl p-3">
+            <div
+              className={`border-2 rounded-xl p-3 transition-colors ${dropTarget === efectivoMethodId && draggingTxId !== null ? 'bg-green-100 border-green-400 ring-2 ring-green-300' : 'bg-green-50 border-green-200'}`}
+              {...dropZone(efectivoMethodId)}
+            >
               <div className="flex justify-between items-center">
                 <div>
                   <p className="text-xs font-semibold text-green-700 uppercase tracking-wide">
@@ -620,14 +677,27 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
               {route.transactions.filter(tx => tx.method === 'Efectivo' || tx.method === 'Negocios en Efectivo').length > 0 && (
                 <div className="mt-3 pt-3 border-t border-green-200 space-y-1">
                   {route.transactions.filter(tx => tx.method === 'Efectivo' || tx.method === 'Negocios en Efectivo').map(tx => (
-                    <div key={tx.id} className="flex items-center justify-between text-xs">
+                    <div
+                      key={tx.id}
+                      draggable
+                      onDragStart={(e) => { setDraggingTxId(tx.id); e.dataTransfer.effectAllowed = 'move'; }}
+                      onDragEnd={() => { setDraggingTxId(null); setDropTarget(null); }}
+                      className={`flex items-center justify-between text-xs cursor-grab active:cursor-grabbing transition-opacity ${draggingTxId === tx.id ? 'opacity-40' : ''}`}
+                    >
                       <span className="text-green-700">
                         {tx.items.map(i => `${i.product} ×${i.quantity}`).join(', ')}
                       </span>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5">
                         <span className="font-semibold text-green-800">${tx.total.toFixed(0)}</span>
+                        <button
+                          onClick={() => setMoveModalTx(tx)}
+                          className="text-gray-300 hover:text-blue-400 transition-colors px-0.5 text-base leading-none"
+                          title="Cambiar método de pago"
+                        >
+                          ⇄
+                        </button>
                         <button onClick={() => setEditingTx(tx)}
-                          className="text-gray-400 hover:text-gray-600 px-1">
+                          className="text-gray-400 hover:text-gray-600 px-0.5">
                           ✏️
                         </button>
                       </div>
@@ -693,7 +763,12 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
             {otrosMethods.map(m => {
               const methodTxs = route.transactions.filter(tx => tx.method === m.method);
               return (
-                <div key={m.method} className="bg-gray-50 rounded-xl border-l-4 overflow-hidden" style={{ borderLeftColor: m.color }}>
+                <div
+                  key={m.method}
+                  className={`bg-gray-50 rounded-xl border-l-4 overflow-hidden transition-all ${dropTarget === m.id && draggingTxId !== null ? 'ring-2 ring-blue-400 bg-blue-50/40' : ''}`}
+                  style={{ borderLeftColor: m.color }}
+                  {...dropZone(m.id)}
+                >
                   {/* Header del método */}
                   <div className="px-3 py-2.5 flex justify-between items-center">
                     <div>
@@ -714,7 +789,13 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
                       {methodTxs.map(tx => {
                         const garrafones = tx.items.reduce((s, i) => s + i.quantity, 0);
                         return (
-                          <div key={tx.id} className="px-3 py-2 flex justify-between items-center gap-2">
+                          <div
+                            key={tx.id}
+                            draggable
+                            onDragStart={(e) => { setDraggingTxId(tx.id); e.dataTransfer.effectAllowed = 'move'; }}
+                            onDragEnd={() => { setDraggingTxId(null); setDropTarget(null); }}
+                            className={`px-3 py-2 flex justify-between items-center gap-2 cursor-grab active:cursor-grabbing transition-opacity ${draggingTxId === tx.id ? 'opacity-40' : ''}`}
+                          >
                             <div className="flex-1 min-w-0">
                               <p className="text-sm text-gray-700 truncate">{tx.customer_name || '—'}</p>
                               <p className="text-xs text-gray-400">{garrafones} garr</p>
@@ -722,6 +803,13 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
                             <span className="text-sm font-semibold text-gray-900 shrink-0">
                               ${Number(tx.total).toFixed(0)}
                             </span>
+                            <button
+                              onClick={() => setMoveModalTx(tx)}
+                              className="text-gray-300 hover:text-blue-400 shrink-0 transition-colors px-0.5 text-base leading-none"
+                              title="Cambiar método de pago"
+                            >
+                              ⇄
+                            </button>
                             <button onClick={() => setEditingTx(tx)}
                               className="text-gray-400 hover:text-gray-600 shrink-0 px-1">
                               ✏️
@@ -734,6 +822,53 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* Modal cambiar método de pago */}
+        {moveModalTx && (
+          <div className="fixed inset-0 bg-black/50 z-[9999] flex items-end sm:items-center justify-center p-4">
+            <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden">
+              <div className="px-5 pt-5 pb-4 border-b border-gray-100">
+                <h3 className="font-bold text-gray-900 text-base">Cambiar método de pago</h3>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  #{moveModalTx.id} · {moveModalTx.customer_name ?? moveModalTx.company_name ?? '—'}
+                </p>
+                <div className="flex items-center gap-2 mt-1.5">
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: moveModalTx.color }}>
+                    {moveModalTx.method}
+                  </span>
+                  <span className="text-gray-400 text-xs">→ ?</span>
+                </div>
+              </div>
+              <div className="px-5 py-4 space-y-2">
+                {route.by_method
+                  .filter(m => m.id !== moveModalTx.payment_method_id && m.method !== 'Negocios')
+                  .map(m => (
+                    <button
+                      key={m.id}
+                      disabled={moveSaving}
+                      onClick={() => handleMoveMethod(moveModalTx, m.id)}
+                      className="w-full flex items-center justify-between px-4 py-3 rounded-xl border border-gray-200 hover:bg-gray-50 active:bg-gray-100 transition-colors disabled:opacity-50 text-left"
+                    >
+                      <span className="text-xs font-bold px-2.5 py-1 rounded-full text-white" style={{ backgroundColor: m.color }}>
+                        {m.method}
+                      </span>
+                      <span className="text-xs text-gray-400">
+                        {m.count} venta{m.count !== 1 ? 's' : ''} · ${m.total.toLocaleString('es-MX', { minimumFractionDigits: 0 })}
+                      </span>
+                    </button>
+                  ))}
+              </div>
+              <div className="px-5 pb-5">
+                <button
+                  onClick={() => setMoveModalTx(null)}
+                  className="w-full py-2.5 border border-gray-200 rounded-xl text-sm text-gray-500 hover:bg-gray-50"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
           </div>
         )}
 

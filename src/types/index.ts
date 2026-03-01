@@ -132,7 +132,7 @@ export interface ActiveDriverRoute {
   total_ventas: number;
   transaction_count: number;
   products: { product: string; units: number; total: number }[];
-  by_method: { method: string; color: string; icon: string; total: number; count: number; garrafones: number }[];
+  by_method: { id: number; method: string; color: string; icon: string; total: number; count: number; garrafones: number }[];
   companies: { company: string; total: number; count: number; garrafones: number }[];
   total_negocios: number;
   garrafones: GarrafonStats;

@@ -44,7 +44,7 @@ foreach ($routes as $route) {
 
     // Resumen financiero por método de pago (con garrafones)
     $byMethod = $pdo->prepare("
-        SELECT pm.name AS method, pm.color, pm.icon,
+        SELECT pm.id, pm.name AS method, pm.color, pm.icon,
                SUM(t.total) AS total,
                COUNT(DISTINCT t.id) AS count,
                COALESCE(SUM(ti.quantity), 0) AS garrafones
@@ -58,6 +58,7 @@ foreach ($routes as $route) {
     $byMethod->execute([$routeId]);
     $methodsRaw = $byMethod->fetchAll();
     $methods = array_map(fn($m) => [
+        'id'         => (int)$m['id'],
         'method'     => $m['method'],
         'color'      => $m['color'],
         'icon'       => $m['icon'],

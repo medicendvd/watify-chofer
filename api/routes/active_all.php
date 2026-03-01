@@ -14,20 +14,27 @@ $pdo = getDB();
 $stmtPrecio = $pdo->query("SELECT base_price FROM products WHERE name LIKE '%Recarga%' ORDER BY display_order LIMIT 1");
 $precioRecarga = (float)($stmtPrecio->fetchColumn() ?: 45);
 
+// Calcular rango de "hoy" en zona horaria de México (UTC-6) para evitar
+// que CURDATE() de MySQL (UTC) cause que las rutas desaparezcan después de las 6 PM
+$tz         = new DateTimeZone('America/Mexico_City');
+$todayStart = (new DateTime('today', $tz))->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s');
+$todayEnd   = (new DateTime('tomorrow', $tz))->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s');
+
 // Rutas activas + rutas finalizadas hoy, ordenadas: activas primero, luego por nombre
-$routesStmt = $pdo->query("
+$routesStmt = $pdo->prepare("
     SELECT r.id, r.garrafones_loaded, r.status, r.started_at, r.finished_at,
            u.id AS user_id, u.name AS chofer_name
     FROM routes r
     JOIN users u ON u.id = r.user_id
     WHERE (r.status = 'active'
-       OR (r.status = 'finished' AND DATE(r.started_at) = CURDATE()))
+       OR (r.status = 'finished' AND r.started_at >= ? AND r.started_at < ?))
       AND u.role != 'Sucursal'
     ORDER BY
       CASE r.status WHEN 'active' THEN 0 ELSE 1 END,
       u.name,
       r.started_at DESC
 ");
+$routesStmt->execute([$todayStart, $todayEnd]);
 $routes = $routesStmt->fetchAll();
 
 $result = [];

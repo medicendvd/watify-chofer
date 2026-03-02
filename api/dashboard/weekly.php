@@ -165,7 +165,9 @@ foreach ($driverMap as $uid => $driverData) {
         $facturadoAmount = $data['facturado'] ?? 0;
         $efectivoNeto    = max(0, $data['efectivo'] - $incidencias);
         $sobre           = max(0, $efectivoNeto - $facturadoAmount);
-        $total           = $efectivoNeto + $data['negocios'] + $data['link'] + $data['tarjeta'] + $data['transferencia'];
+        // El total del día usa el efectivo bruto: el dinero retirado (sacar dinero)
+        // sigue formando parte del corte, solo sale del sobre del chofer.
+        $total           = $data['efectivo'] + $data['negocios'] + $data['link'] + $data['tarjeta'] + $data['transferencia'];
         $driverDays[] = [
             'date'           => $d,
             'efectivo'       => $sobre,

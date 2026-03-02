@@ -137,7 +137,7 @@ export default function SucursalPOS({ onSaleComplete }: Props) {
 
           {!loadingInit && initialized && (
             <>
-              {/* Fila de productos */}
+              {/* Productos */}
               {(() => {
                 const FEATURED = new Set(['45 Recarga', 'Pack', 'Nuevo']);
                 const ORDER = ['45 Recarga', 'Nuevo', 'Pack', '50 Recarga', 'Mini completo', 'Envase 10L', 'Envase 5L'];
@@ -146,50 +146,98 @@ export default function SucursalPOS({ onSaleComplete }: Props) {
                   const ib = ORDER.indexOf(b.name);
                   return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
                 });
+                const featured = sorted.filter(p => FEATURED.has(p.name));
+                const others   = sorted.filter(p => !FEATURED.has(p.name));
                 return (
-                  <div className="flex gap-1 w-full">
-                    {sorted.map(p => {
-                      const qty = quantities[p.id] ?? 0;
-                      const featured = FEATURED.has(p.name);
-                      return (
-                        <div
-                          key={p.id}
-                          className="rounded-xl border-2 transition-colors min-w-0"
-                          style={{
-                            flex: featured ? '0 0 15%' : '1',
-                            padding: featured ? '8px 6px 7px' : '6px 4px 5px',
-                            ...(qty > 0
-                              ? { borderColor: '#2543e3', backgroundColor: '#eef0fd' }
-                              : { borderColor: '#e5e7eb', backgroundColor: '#f9fafb' }),
-                          }}
-                        >
-                          <p
-                            className="font-semibold text-gray-800 leading-tight mb-0.5 truncate"
-                            style={{ fontSize: featured ? 12 : 10 }}
-                          >{p.name}</p>
-                          <p
-                            className="text-gray-500 mb-1.5"
-                            style={{ fontSize: featured ? 11 : 10 }}
-                          >${p.base_price.toFixed(0)}</p>
-                          <div className="flex items-center" style={{ gap: featured ? 4 : 2 }}>
-                            <button
-                              onClick={() => changeQty(p.id, -1)}
-                              className="rounded-full bg-gray-200 text-gray-700 font-bold flex items-center justify-center hover:bg-gray-300 transition-colors flex-none"
-                              style={{ width: featured ? 20 : 15, height: featured ? 20 : 15, fontSize: featured ? 12 : 10 }}
-                            >−</button>
-                            <span
-                              className="font-bold text-gray-800 text-center flex-none"
-                              style={{ fontSize: featured ? 12 : 10, width: featured ? 14 : 10 }}
-                            >{qty}</span>
-                            <button
-                              onClick={() => changeQty(p.id, 1)}
-                              className="rounded-full text-white font-bold flex items-center justify-center transition-colors flex-none"
-                              style={{ width: featured ? 20 : 15, height: featured ? 20 : 15, fontSize: featured ? 12 : 10, backgroundColor: '#2543e3' }}
-                            >+</button>
-                          </div>
+                  <div className="flex gap-2">
+
+                    {/* Columna izquierda 60% — destacados, 3 cols */}
+                    <div className="min-w-0" style={{ flex: '0 0 60%' }}>
+                      <div className="grid grid-cols-3 gap-2 h-full">
+                        {featured.map(p => {
+                          const qty = quantities[p.id] ?? 0;
+                          return (
+                            <div
+                              key={p.id}
+                              className="rounded-2xl border-2 transition-all flex flex-col justify-between"
+                              style={{
+                                padding: '14px 14px 14px',
+                                minHeight: 140,
+                                ...(qty > 0
+                                  ? { borderColor: '#2543e3', backgroundColor: '#f0f2fe' }
+                                  : { borderColor: '#e5e7eb', backgroundColor: '#f9fafb' }),
+                              }}
+                            >
+                              <div>
+                                <p className="font-bold text-gray-800 text-xl leading-tight">{p.name}</p>
+                                <p className="text-gray-400 text-sm mt-1">${p.base_price.toFixed(0)}</p>
+                              </div>
+                              <div className="flex items-center justify-between mt-4">
+                                <button
+                                  onClick={() => changeQty(p.id, -1)}
+                                  className="rounded-full bg-gray-200 text-gray-600 font-bold flex items-center justify-center hover:bg-gray-300 active:scale-95 transition-all flex-none"
+                                  style={{ width: 44, height: 44, fontSize: 24 }}
+                                >−</button>
+                                <span className="font-bold text-center select-none"
+                                  style={{ fontSize: 28, minWidth: 28, color: qty === 0 ? '#d1d5db' : '#1f2937' }}>
+                                  {qty}
+                                </span>
+                                <button
+                                  onClick={() => changeQty(p.id, 1)}
+                                  className="rounded-full text-white font-bold flex items-center justify-center active:scale-95 transition-all flex-none"
+                                  style={{ width: 44, height: 44, fontSize: 24, backgroundColor: '#2543e3' }}
+                                >+</button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Columna derecha 40% — secundarios, 2 cols */}
+                    {others.length > 0 && (
+                      <div className="min-w-0" style={{ flex: '1 1 0' }}>
+                        <div className="grid grid-cols-2 gap-2">
+                          {others.map(p => {
+                            const qty = quantities[p.id] ?? 0;
+                            return (
+                              <div
+                                key={p.id}
+                                className="rounded-xl border-2 transition-all flex flex-col justify-between"
+                                style={{
+                                  padding: '10px 10px 10px',
+                                  ...(qty > 0
+                                    ? { borderColor: '#2543e3', backgroundColor: '#f0f2fe' }
+                                    : { borderColor: '#e5e7eb', backgroundColor: '#f9fafb' }),
+                                }}
+                              >
+                                <div>
+                                  <p className="font-semibold text-gray-700 text-xs leading-tight truncate">{p.name}</p>
+                                  <p className="text-gray-400 text-[11px] mt-0.5">${p.base_price.toFixed(0)}</p>
+                                </div>
+                                <div className="flex items-center justify-between mt-3">
+                                  <button
+                                    onClick={() => changeQty(p.id, -1)}
+                                    className="rounded-full bg-gray-200 text-gray-600 font-bold flex items-center justify-center hover:bg-gray-300 active:scale-95 transition-all flex-none"
+                                    style={{ width: 30, height: 30, fontSize: 18 }}
+                                  >−</button>
+                                  <span className="font-bold text-center select-none"
+                                    style={{ fontSize: 18, minWidth: 18, color: qty === 0 ? '#d1d5db' : '#1f2937' }}>
+                                    {qty}
+                                  </span>
+                                  <button
+                                    onClick={() => changeQty(p.id, 1)}
+                                    className="rounded-full text-white font-bold flex items-center justify-center active:scale-95 transition-all flex-none"
+                                    style={{ width: 30, height: 30, fontSize: 18, backgroundColor: '#2543e3' }}
+                                  >+</button>
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
-                      );
-                    })}
+                      </div>
+                    )}
+
                   </div>
                 );
               })()}

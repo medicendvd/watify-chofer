@@ -16,13 +16,18 @@ $sucursalUser = $stmtUser->fetch();
 if (!$sucursalUser) jsonError('Usuario sucursal no encontrado', 404);
 $sucursalId = (int)$sucursalUser['id'];
 
-// Buscar ruta de hoy
+// Rango de "hoy" en zona horaria México (evita bug de CURDATE() UTC)
+$tz         = new DateTimeZone('America/Mexico_City');
+$todayStart = (new DateTime('today', $tz))->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s');
+$todayEnd   = (new DateTime('tomorrow', $tz))->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s');
+
+// Buscar ruta de hoy (activa o finalizada)
 $stmtRoute = $pdo->prepare("
     SELECT id, started_at FROM routes
-    WHERE user_id = ? AND DATE(started_at) = CURDATE()
+    WHERE user_id = ? AND started_at >= ? AND started_at < ?
     ORDER BY id DESC LIMIT 1
 ");
-$stmtRoute->execute([$sucursalId]);
+$stmtRoute->execute([$sucursalId, $todayStart, $todayEnd]);
 $route = $stmtRoute->fetch();
 
 if (!$route) {

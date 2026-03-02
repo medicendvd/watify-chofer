@@ -10,18 +10,25 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') jsonError('Método no permitido', 405)
 
 $pdo = getDB();
 
-$routesStmt = $pdo->query("
+// Rango de "hoy" en zona horaria México para evitar el bug de CURDATE() UTC
+$tz         = new DateTimeZone('America/Mexico_City');
+$todayStart = (new DateTime('today', $tz))->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s');
+$todayEnd   = (new DateTime('tomorrow', $tz))->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s');
+
+$routesStmt = $pdo->prepare("
     SELECT r.id, r.garrafones_loaded, r.status, r.started_at, r.finished_at,
            u.id AS user_id, u.name AS chofer_name
     FROM routes r
     JOIN users u ON u.id = r.user_id
-    WHERE r.status = 'active'
-       OR (r.status = 'finished' AND DATE(r.started_at) = CURDATE())
+    WHERE u.role != 'Sucursal'
+      AND (r.status = 'active'
+           OR (r.status = 'finished' AND r.started_at >= ? AND r.started_at < ?))
     ORDER BY
       CASE r.status WHEN 'active' THEN 0 ELSE 1 END,
       u.name,
       r.started_at DESC
 ");
+$routesStmt->execute([$todayStart, $todayEnd]);
 $routes = $routesStmt->fetchAll();
 
 $result = [];

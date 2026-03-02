@@ -60,9 +60,20 @@ function IncidentsList({ list }: { list: WeeklyIncident[] }) {
             </span>
           </div>
         ) : (
-          <span key={inc.id} className="text-red-400 text-[10px] font-semibold leading-none">
-            -{fmt(inc.amount)}
-          </span>
+          <div key={inc.id} className="flex flex-col items-center mt-0.5">
+            <span className="text-red-400 text-[10px] font-semibold leading-none">
+              -{fmt(inc.amount)}
+            </span>
+            {inc.description && (
+              <span
+                className="text-[9px] text-red-300 leading-tight mt-0.5 text-center"
+                style={{ maxWidth: 64 }}
+                title={inc.description}
+              >
+                {inc.description.replace(/^Sacar Dinero - /, '')}
+              </span>
+            )}
+          </div>
         )
       )}
     </>

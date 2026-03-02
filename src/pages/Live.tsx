@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuthContext } from '../store/authContext';
 import { api } from '../lib/api';
@@ -7,8 +7,6 @@ import LiveDriverCard from '../components/live/LiveDriverCard';
 import SimplirouteMap from '../components/live/SimplirouteMap';
 
 const REFRESH_MS = 2 * 60 * 1000;  // 2 min datos watify
-const MAP_MS     = 30_000;          // 30 s mostrando mapa
-const DATA_MS    = 5 * 60 * 1000;  // 5 min mostrando datos
 
 const HEADER_H = 57; // px — altura del header sticky
 
@@ -27,7 +25,6 @@ export default function Live() {
   const [mapData, setMapData]         = useState<SimplirouteMapData | null>(null);
   const [mapError, setMapError]       = useState('');
   const [showMap, setShowMap]         = useState(false);
-  const [mapProgress, setMapProgress] = useState(0);
 
   // viewport height para el mapa
   const [vh, setVh] = useState(window.innerHeight);
@@ -71,44 +68,7 @@ export default function Live() {
     return () => clearInterval(id);
   }, [loadMap]);
 
-  // ─── Ciclo automático mapa ↔ datos ─────────────────────────────────────────
   const hasRoutes = (mapData?.routes.length ?? 0) > 0;
-
-  // Usamos un ref para los timers para que el cleanup los cancele correctamente
-  const timersRef = useRef<{ timeout: ReturnType<typeof setTimeout> | null; bar: ReturnType<typeof setInterval> | null }>({ timeout: null, bar: null });
-
-  useEffect(() => {
-    if (!hasRoutes) return;
-
-    function startBar(ms: number) {
-      if (timersRef.current.bar) clearInterval(timersRef.current.bar);
-      setMapProgress(0);
-      const start = Date.now();
-      timersRef.current.bar = setInterval(() => {
-        setMapProgress(Math.min(100, ((Date.now() - start) / ms) * 100));
-      }, 80);
-    }
-
-    function showMapPhase() {
-      setShowMap(true);
-      startBar(MAP_MS);
-      timersRef.current.timeout = setTimeout(showDataPhase, MAP_MS);
-    }
-
-    function showDataPhase() {
-      setShowMap(false);
-      startBar(DATA_MS);
-      timersRef.current.timeout = setTimeout(showMapPhase, DATA_MS);
-    }
-
-    showMapPhase();
-
-    return () => {
-      if (timersRef.current.timeout) clearTimeout(timersRef.current.timeout);
-      if (timersRef.current.bar)     clearInterval(timersRef.current.bar);
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasRoutes]);
 
   // ─── Reloj ─────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -154,11 +114,6 @@ export default function Live() {
           {lastUpdated && (
             <span className="text-xs text-gray-500">· {formatTime(lastUpdated)}</span>
           )}
-          {hasRoutes && (
-            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${showMap ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
-              {showMap ? '🗺 Mapa' : '📊 Datos'}
-            </span>
-          )}
         </div>
         <div className="flex items-center gap-3">
           <span className="text-xl font-mono font-bold" style={{ color: '#80c0d7' }}>{formatTime(now)}</span>
@@ -180,16 +135,6 @@ export default function Live() {
             Salir
           </button>
         </div>
-      </div>
-
-      {/* Barra de progreso del ciclo */}
-      <div className="h-0.5 bg-gray-800">
-        {hasRoutes && (
-          <div
-            className={`h-full ${showMap ? 'bg-blue-500' : 'bg-emerald-500'}`}
-            style={{ width: `${mapProgress}%`, transition: 'none' }}
-          />
-        )}
       </div>
 
       {/* Error de mapa (solo debug, visible brevemente) */}

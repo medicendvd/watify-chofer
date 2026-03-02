@@ -40,22 +40,24 @@ export default function FinalizarRutaModal({ routeId, onFinished, onNuevaRuta, o
   if (step === 'confirm') {
     return (
       <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4">
-        <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl p-7 text-center">
-          <div className="text-5xl mb-4">🏁</div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">¿Finalizar ruta?</h2>
-          <p className="text-sm text-gray-500 mb-6">
-            Se generará el corte de caja con el resumen de todo lo que hiciste en esta ruta.
-          </p>
-          {error && <p className="text-red-500 text-sm mb-4 bg-red-50 rounded-lg py-2">{error}</p>}
-          <div className="flex gap-3">
-            <button onClick={onClose}
-              className="flex-1 py-3 border border-gray-200 rounded-xl text-sm text-gray-600">
-              Cancelar
-            </button>
-            <button onClick={handleFinalize} disabled={loading}
-              className="flex-1 py-3 bg-water-600 hover:bg-water-700 disabled:opacity-60 text-white rounded-xl text-sm font-semibold">
-              {loading ? 'Cerrando...' : 'Finalizar ruta'}
-            </button>
+        <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-y-auto" style={{ maxHeight: '90vh' }}>
+          <div className="p-7 text-center">
+            <div className="text-5xl mb-4">🏁</div>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">¿Finalizar ruta?</h2>
+            <p className="text-sm text-gray-500 mb-6">
+              Se generará el corte de caja con el resumen de todo lo que hiciste en esta ruta.
+            </p>
+            {error && <p className="text-red-500 text-sm mb-4 bg-red-50 rounded-lg py-2">{error}</p>}
+            <div className="flex gap-3">
+              <button onClick={onClose}
+                className="flex-1 py-3 border border-gray-200 rounded-xl text-sm text-gray-600">
+                Cancelar
+              </button>
+              <button onClick={handleFinalize} disabled={loading}
+                className="flex-1 py-3 bg-water-600 hover:bg-water-700 disabled:opacity-60 text-white rounded-xl text-sm font-semibold">
+                {loading ? 'Cerrando...' : 'Finalizar ruta'}
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -66,16 +68,19 @@ export default function FinalizarRutaModal({ routeId, onFinished, onNuevaRuta, o
   const efectivo = summary!.by_method.find(m => m.method === 'Efectivo');
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl my-4">
-        {/* Header */}
-        <div className="bg-water-600 text-white rounded-t-3xl p-6 text-center">
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4">
+      <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl flex flex-col" style={{ maxHeight: '90vh' }}>
+
+        {/* Header — fijo */}
+        <div className="bg-water-600 text-white rounded-t-3xl p-6 text-center flex-none">
           <div className="text-4xl mb-2">✅</div>
           <h2 className="text-xl font-bold">Corte de ruta</h2>
           <p className="text-water-200 text-sm mt-1">Resumen de tu recorrido</p>
         </div>
 
-        <div className="p-5 space-y-4">
+        {/* Contenido con scroll */}
+        <div className="overflow-y-auto flex-1 p-5 space-y-4">
+
           {/* Efectivo destacado */}
           {efectivo && (
             <div className="bg-green-50 border-2 border-green-200 rounded-2xl p-4">
@@ -148,10 +153,11 @@ export default function FinalizarRutaModal({ routeId, onFinished, onNuevaRuta, o
               </p>
             </div>
           </div>
+
         </div>
 
-        {/* Botón nueva ruta */}
-        <div className="px-5 pb-6">
+        {/* Botón nueva ruta — fijo al fondo */}
+        <div className="px-5 py-4 border-t border-gray-100 flex-none">
           <button
             onClick={onNuevaRuta}
             className="w-full py-4 bg-water-600 hover:bg-water-700 text-white font-bold text-base rounded-2xl transition-colors"
@@ -159,6 +165,7 @@ export default function FinalizarRutaModal({ routeId, onFinished, onNuevaRuta, o
             Iniciar nueva ruta →
           </button>
         </div>
+
       </div>
     </div>
   );

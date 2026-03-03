@@ -47,7 +47,7 @@ function CreateSaleModal({ route, onClose, onSaved }: CreateSaleModalProps) {
     });
 
   const selectedMethod = methods.find(m => m.id === methodId);
-  const isNegocios = selectedMethod?.name === 'Negocios';
+  const isNegocios = selectedMethod?.name === 'Negocios' || selectedMethod?.name === 'Negocios en Efectivo';
 
   const items = products
     .filter(p => (quantities[p.id] ?? 0) > 0)

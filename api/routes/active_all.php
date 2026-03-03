@@ -77,7 +77,7 @@ foreach ($routes as $route) {
         JOIN payment_methods pm ON pm.id = t.payment_method_id
         LEFT JOIN transaction_items ti ON ti.transaction_id = t.id
         WHERE t.route_id = ? AND t.company_id IS NOT NULL
-          AND pm.name NOT IN ('Negocios en Efectivo', 'Distribuidores')
+          AND pm.name NOT IN ('Distribuidores')
         GROUP BY c.id
         ORDER BY c.name
     ");
@@ -213,7 +213,7 @@ foreach ($routes as $route) {
         FROM transactions t
         JOIN payment_methods pm ON pm.id = t.payment_method_id
         WHERE t.route_id = ?
-          AND pm.name IN ('Efectivo', 'Negocios en Efectivo', 'Distribuidores')
+          AND pm.name IN ('Efectivo', 'Distribuidores')
           AND DATE(t.transaction_date) = ?
     ");
     $efectivoHoyStmt->execute([$routeId, $routeDate]);

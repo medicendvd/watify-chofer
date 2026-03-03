@@ -771,7 +771,8 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
     m => m.method !== 'Efectivo' &&
          m.method !== 'Negocios' &&
          m.method !== 'Negocios en Efectivo' &&
-         m.method !== 'Distribuidores'
+         m.method !== 'Distribuidores' &&
+         m.method !== 'Transferencia'
   );
   const g = route.garrafones;
 
@@ -946,19 +947,29 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
               className={`border-2 rounded-xl p-3 transition-colors ${dropTarget === efectivoMethodId && draggingTxId !== null ? 'bg-green-100 border-green-400 ring-2 ring-green-300' : 'bg-green-50 border-green-200'}`}
               {...dropZone(efectivoMethodId)}
             >
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-xs font-semibold text-green-700 uppercase tracking-wide">
-                    💵 Efectivo a entregar
-                  </p>
-                  <p className="text-xs text-green-600 mt-0.5">
-                    {efectivo.count} venta{efectivo.count !== 1 ? 's' : ''} · {efectivo.garrafones} garr
-                  </p>
-                </div>
-                <p className="text-2xl font-bold text-green-700">
-                  ${efectivoHoy.toLocaleString('es-MX', { minimumFractionDigits: 0 })}
-                </p>
-              </div>
+              {(() => {
+                const distribEntry = route.by_method.find(m => m.method === 'Distribuidores');
+                return (
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="text-xs font-semibold text-green-700 uppercase tracking-wide">
+                        💵 Efectivo a entregar
+                      </p>
+                      <p className="text-xs text-green-600 mt-0.5">
+                        {efectivo.count} venta{efectivo.count !== 1 ? 's' : ''} · {efectivo.garrafones} garr
+                      </p>
+                      {distribEntry && (
+                        <span className="inline-block mt-1 text-[10px] font-semibold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">
+                          incl. ${Number(distribEntry.total).toLocaleString('es-MX', { minimumFractionDigits: 0 })} distribuidores
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-2xl font-bold text-green-700">
+                      ${efectivoHoy.toLocaleString('es-MX', { minimumFractionDigits: 0 })}
+                    </p>
+                  </div>
+                );
+              })()}
 
               {/* Split si hay facturas */}
               {garrafonesFact > 0 && (
@@ -992,9 +1003,9 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
               )}
 
               {/* Transacciones individuales de efectivo */}
-              {route.transactions.filter(tx => tx.method === 'Efectivo' || tx.method === 'Negocios en Efectivo' || tx.method === 'Distribuidores').length > 0 && (
+              {route.transactions.filter(tx => tx.method === 'Efectivo' || tx.method === 'Negocios en Efectivo').length > 0 && (
                 <div className="mt-3 pt-3 border-t border-green-200 space-y-1">
-                  {route.transactions.filter(tx => tx.method === 'Efectivo' || tx.method === 'Negocios en Efectivo' || tx.method === 'Distribuidores').map(tx => (
+                  {route.transactions.filter(tx => tx.method === 'Efectivo' || tx.method === 'Negocios en Efectivo').map(tx => (
                     <div
                       key={tx.id}
                       draggable
@@ -1315,27 +1326,49 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
           </div>
         )}
 
-        {/* Empresas a crédito */}
-        {route.companies.length > 0 && (
-          <div className="bg-purple-50 rounded-xl p-3 border border-purple-100">
-            <p className="text-xs font-semibold text-purple-700 uppercase tracking-wide mb-2">
-              🏢 Empresas a crédito
-            </p>
-            <div className="space-y-1.5">
-              {route.companies.map(c => {
-                const companyTxs = route.transactions.filter(tx => tx.company_name === c.company);
-                return (
-                  <div key={c.company}>
+        {/* Helper: renderizar sección de empresas agrupadas por método */}
+        {(['Distribuidores', 'Transferencia', 'Negocios'] as const).map(metodoClave => {
+          const cfg = {
+            Distribuidores: { label: '🚛 Distribuidores',    bg: 'bg-amber-50',  border: 'border-amber-100',  divider: 'border-amber-200',  text: 'text-amber-700',  total: 'text-amber-800' },
+            Transferencia:  { label: '🔄 Transferencias',    bg: 'bg-blue-50',   border: 'border-blue-100',   divider: 'border-blue-200',   text: 'text-blue-700',   total: 'text-blue-800'  },
+            Negocios:       { label: '🏢 Empresas a crédito', bg: 'bg-purple-50', border: 'border-purple-100', divider: 'border-purple-200', text: 'text-purple-700', total: 'text-purple-800' },
+          }[metodoClave];
+
+          const txs = route.transactions.filter(tx => tx.method === metodoClave);
+          if (txs.length === 0) return null;
+
+          const grouped = new Map<string, typeof txs>();
+          for (const tx of txs) {
+            const key = tx.company_name ?? '—';
+            if (!grouped.has(key)) grouped.set(key, []);
+            grouped.get(key)!.push(tx);
+          }
+          const groups = Array.from(grouped.entries()).map(([company, txList]) => ({
+            company,
+            txs: txList,
+            total: txList.reduce((s, tx) => s + tx.total, 0),
+            garrafones: txList.reduce((s, tx) => s + tx.items.reduce((si, i) => si + i.quantity, 0), 0),
+          }));
+          const sectionTotal = groups.reduce((s, g) => s + g.total, 0);
+
+          return (
+            <div key={metodoClave} className={`${cfg.bg} rounded-xl p-3 border ${cfg.border}`}>
+              <p className={`text-xs font-semibold ${cfg.text} uppercase tracking-wide mb-2`}>
+                {cfg.label}
+              </p>
+              <div className="space-y-1.5">
+                {groups.map(g => (
+                  <div key={g.company}>
                     <div className="flex justify-between items-center text-sm">
                       <div>
-                        <span className="text-gray-700">{c.company}</span>
-                        <span className="text-xs text-gray-400 ml-1.5">· {c.garrafones} garr</span>
+                        <span className="text-gray-700">{g.company}</span>
+                        <span className="text-xs text-gray-400 ml-1.5">· {g.garrafones} garr</span>
                       </div>
                       <span className="font-semibold text-gray-900">
-                        ${Number(c.total).toLocaleString('es-MX', { minimumFractionDigits: 0 })}
+                        ${g.total.toLocaleString('es-MX', { minimumFractionDigits: 0 })}
                       </span>
                     </div>
-                    {companyTxs.map(tx => (
+                    {g.txs.map(tx => (
                       <div key={tx.id} className="flex items-center justify-between mt-1 pl-2 text-xs text-gray-500">
                         <span>{tx.items.map(i => `${i.product} ×${i.quantity}`).join(', ')}</span>
                         <button onClick={() => setEditingTx(tx)}
@@ -1355,17 +1388,17 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
                       </div>
                     ))}
                   </div>
-                );
-              })}
+                ))}
+              </div>
+              <div className={`border-t ${cfg.divider} mt-2 pt-2 flex justify-between`}>
+                <span className={`text-xs font-semibold ${cfg.text}`}>Total</span>
+                <span className={`font-bold ${cfg.total} text-sm`}>
+                  ${sectionTotal.toLocaleString('es-MX', { minimumFractionDigits: 0 })}
+                </span>
+              </div>
             </div>
-            <div className="border-t border-purple-200 mt-2 pt-2 flex justify-between">
-              <span className="text-xs font-semibold text-purple-700">Total crédito</span>
-              <span className="font-bold text-purple-800 text-sm">
-                ${Number(route.total_negocios).toLocaleString('es-MX', { minimumFractionDigits: 0 })}
-              </span>
-            </div>
-          </div>
-        )}
+          );
+        })}
 
       </div>
     </div>

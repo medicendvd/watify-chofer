@@ -32,7 +32,7 @@ jobs:
           password: ${{ secrets.FTPPASSWORD }}
           local-dir: ./dist/
           server-dir: ./app/
-          protocol: ftp
+          protocol: ftps
           state-name: .deploy-state-v5
           log-level: verbose
 
@@ -59,7 +59,7 @@ jobs:
           password: ${{ secrets.FTPPASSWORD }}
           local-dir: ./api/
           server-dir: ./api/
-          protocol: ftp
+          protocol: ftps
           state-name: .deploy-state-v5
           exclude: |
             **/.git*

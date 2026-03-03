@@ -288,21 +288,26 @@ function EditTxModal({ tx, onSave, onClose }: {
       i.product_id === productId ? { ...i, quantity: Math.max(0, i.quantity + delta) } : i
     ));
 
+  const allZero = items.every(i => i.quantity === 0);
+
   const handleSave = async () => {
-    const validItems = items.filter(i => i.quantity > 0);
-    if (validItems.length === 0) return;
     setSaving(true);
     try {
-      await api.updateTransaction(tx.id, {
-        customer_name: tx.customer_name,
-        company_id: tx.company_id,
-        payment_method_id: tx.payment_method_id,
-        items: validItems.map(i => ({
-          product_id: i.product_id,
-          quantity: i.quantity,
-          unit_price: i.unit_price,
-        })),
-      });
+      const validItems = items.filter(i => i.quantity > 0);
+      if (validItems.length === 0) {
+        await api.deleteTransaction(tx.id);
+      } else {
+        await api.updateTransaction(tx.id, {
+          customer_name: tx.customer_name,
+          company_id: tx.company_id,
+          payment_method_id: tx.payment_method_id,
+          items: validItems.map(i => ({
+            product_id: i.product_id,
+            quantity: i.quantity,
+            unit_price: i.unit_price,
+          })),
+        });
+      }
       onSave();
     } catch (e: unknown) {
       alert(e instanceof Error ? e.message : 'Error al guardar');
@@ -358,9 +363,9 @@ function EditTxModal({ tx, onSave, onClose }: {
           <button onClick={onClose} className="flex-1 py-3 border border-gray-200 rounded-2xl text-sm text-gray-500">
             Cancelar
           </button>
-          <button onClick={handleSave} disabled={saving || items.every(i => i.quantity === 0)}
-            className="flex-1 py-3 bg-[#1a2fa8] text-white rounded-2xl text-sm font-semibold disabled:opacity-50">
-            {saving ? 'Guardando...' : 'Guardar'}
+          <button onClick={handleSave} disabled={saving}
+            className={`flex-1 py-3 rounded-2xl text-sm font-semibold disabled:opacity-50 text-white transition-colors ${allZero ? 'bg-red-500 hover:bg-red-600' : 'bg-[#1a2fa8]'}`}>
+            {saving ? (allZero ? 'Eliminando...' : 'Guardando...') : allZero ? 'Eliminar venta' : 'Guardar'}
           </button>
         </div>
       </div>
@@ -648,6 +653,19 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
   const [createSaleOpen, setCreateSaleOpen] = useState(false);
   const [allMethods,     setAllMethods]     = useState<PMethod[]>([]);
   const [loadingMethods, setLoadingMethods] = useState(false);
+  const [deletingTxId,   setDeletingTxId]   = useState<number | null>(null);
+
+  const handleDeleteTx = async (txId: number) => {
+    setDeletingTxId(txId);
+    try {
+      await api.deleteTransaction(txId);
+      onRefresh?.();
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : 'Error al eliminar');
+    } finally {
+      setDeletingTxId(null);
+    }
+  };
 
   const ensureMethods = async () => {
     if (allMethods.length || loadingMethods) return;
@@ -997,6 +1015,16 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
                           className="text-gray-400 hover:text-gray-600 px-0.5">
                           ✏️
                         </button>
+                        <button
+                          onClick={() => handleDeleteTx(tx.id)}
+                          disabled={deletingTxId === tx.id}
+                          className="text-gray-300 hover:text-red-400 transition-colors px-0.5 disabled:opacity-40"
+                          title="Eliminar venta"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
+                            <path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5a.75.75 0 0 1 .786-.711Z" clipRule="evenodd" />
+                          </svg>
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -1178,6 +1206,16 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
                               className="text-gray-400 hover:text-gray-600 shrink-0 px-1">
                               ✏️
                             </button>
+                            <button
+                              onClick={() => handleDeleteTx(tx.id)}
+                              disabled={deletingTxId === tx.id}
+                              className="text-gray-300 hover:text-red-400 shrink-0 transition-colors px-0.5 disabled:opacity-40"
+                              title="Eliminar venta"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
+                                <path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5a.75.75 0 0 1 .786-.711Z" clipRule="evenodd" />
+                              </svg>
+                            </button>
                           </div>
                         );
                       })}
@@ -1268,6 +1306,16 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
                         <button onClick={() => setEditingTx(tx)}
                           className="text-gray-400 hover:text-gray-600 ml-2 px-1">
                           ✏️
+                        </button>
+                        <button
+                          onClick={() => handleDeleteTx(tx.id)}
+                          disabled={deletingTxId === tx.id}
+                          className="text-gray-300 hover:text-red-400 transition-colors px-0.5 disabled:opacity-40"
+                          title="Eliminar venta"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
+                            <path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5a.75.75 0 0 1 .786-.711Z" clipRule="evenodd" />
+                          </svg>
                         </button>
                       </div>
                     ))}

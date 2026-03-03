@@ -35,7 +35,7 @@ function CreateSaleModal({ route, onClose, onSaved }: CreateSaleModalProps) {
       api.getCompanies() as Promise<Company[]>,
     ]).then(([prods, meths, comps]) => {
       setProducts(prods.map(p => ({ ...p, base_price: Number(p.base_price) })));
-      setMethods(meths.filter(m => m.is_active));
+      setMethods(meths.filter(m => Number(m.is_active) === 1));
       setCompanies(comps);
     }).catch(() => {}).finally(() => setLoading(false));
   }, []);
@@ -576,7 +576,7 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
     setLoadingMethods(true);
     try {
       const data = await api.getPaymentMethods() as PMethod[];
-      setAllMethods(data.filter(m => m.is_active));
+      setAllMethods(data.filter(m => Number(m.is_active) === 1));
     } catch { /* ignore */ }
     finally { setLoadingMethods(false); }
   };

@@ -734,7 +734,7 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
   });
 
   const efectivoEntries = route.by_method.filter(
-    m => m.method === 'Efectivo' || m.method === 'Negocios en Efectivo'
+    m => m.method === 'Efectivo' || m.method === 'Negocios en Efectivo' || m.method === 'Distribuidores'
   );
   const efectivoMethodId = efectivoEntries.find(m => m.method === 'Efectivo')?.id
     ?? efectivoEntries[0]?.id
@@ -749,7 +749,8 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
   const otrosMethods = route.by_method.filter(
     m => m.method !== 'Efectivo' &&
          m.method !== 'Negocios' &&
-         m.method !== 'Negocios en Efectivo'
+         m.method !== 'Negocios en Efectivo' &&
+         m.method !== 'Distribuidores'
   );
   const g = route.garrafones;
 
@@ -970,9 +971,9 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
               )}
 
               {/* Transacciones individuales de efectivo */}
-              {route.transactions.filter(tx => tx.method === 'Efectivo' || tx.method === 'Negocios en Efectivo').length > 0 && (
+              {route.transactions.filter(tx => tx.method === 'Efectivo' || tx.method === 'Negocios en Efectivo' || tx.method === 'Distribuidores').length > 0 && (
                 <div className="mt-3 pt-3 border-t border-green-200 space-y-1">
-                  {route.transactions.filter(tx => tx.method === 'Efectivo' || tx.method === 'Negocios en Efectivo').map(tx => (
+                  {route.transactions.filter(tx => tx.method === 'Efectivo' || tx.method === 'Negocios en Efectivo' || tx.method === 'Distribuidores').map(tx => (
                     <div
                       key={tx.id}
                       draggable

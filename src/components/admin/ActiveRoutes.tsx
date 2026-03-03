@@ -7,7 +7,7 @@ type AdminTx = ActiveDriverRoute['transactions'][number];
 type EditItem = { product_id: number; product: string; quantity: number; unit_price: number };
 type PMethod = { id: number; name: string; color: string; is_active: boolean };
 type Product = { id: number; name: string; base_price: number };
-type Company = { id: number; name: string };
+type Company = { id: number; name: string; special_prices: Record<number, number> };
 
 // ── Modal para crear venta desde el admin ───────────────────────────────────
 interface CreateSaleModalProps {
@@ -49,9 +49,18 @@ function CreateSaleModal({ route, onClose, onSaved }: CreateSaleModalProps) {
   const selectedMethod = methods.find(m => m.id === methodId);
   const isNegocios = selectedMethod?.name === 'Negocios' || selectedMethod?.name === 'Negocios en Efectivo';
 
+  const selectedCompany = companies.find(c => c.id === companyId);
+  const getPrice = (p: Product) => {
+    if (selectedCompany) {
+      const special = selectedCompany.special_prices[p.id];
+      if (special !== undefined) return Number(special);
+    }
+    return p.base_price;
+  };
+
   const items = products
     .filter(p => (quantities[p.id] ?? 0) > 0)
-    .map(p => ({ product_id: p.id, quantity: quantities[p.id], unit_price: p.base_price }));
+    .map(p => ({ product_id: p.id, quantity: quantities[p.id], unit_price: getPrice(p) }));
 
   const total = items.reduce((s, i) => s + i.unit_price * i.quantity, 0);
 
@@ -101,7 +110,7 @@ function CreateSaleModal({ route, onClose, onSaved }: CreateSaleModalProps) {
                   return (
                     <div key={p.id} className="border border-gray-200 rounded-xl p-3">
                       <p className="text-xs font-medium text-gray-700 mb-1 truncate">{p.name}</p>
-                      <p className="text-xs text-gray-400 mb-2">${p.base_price.toFixed(0)} c/u</p>
+                      <p className="text-xs text-gray-400 mb-2">${getPrice(p).toFixed(0)} c/u</p>
                       <div className="flex items-center justify-between gap-2">
                         <button
                           onClick={() => adjust(p.id, -1)}

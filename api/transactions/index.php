@@ -92,6 +92,11 @@ if ($method === 'POST') {
     if (!$paymentMethodId)    jsonError('Método de pago requerido');
     if (empty($items))        jsonError('Agrega al menos un producto');
 
+    $targetUserId = $currentUser['id'];
+    if ($currentUser['role'] === 'Admin' && !empty($body['user_id'])) {
+        $targetUserId = (int)$body['user_id'];
+    }
+
     // Calcular total
     $total = 0;
     foreach ($items as $item) {
@@ -106,7 +111,7 @@ if ($method === 'POST') {
              VALUES (?, ?, ?, ?, ?, ?, ?)'
         );
         $stmtTx->execute([
-            $currentUser['id'],
+            $targetUserId,
             $routeId,
             $customerName ?: null,
             $companyId,

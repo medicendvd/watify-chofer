@@ -1,10 +1,200 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { ActiveDriverRoute, FacturaGarrafon } from '../../types';
 import { api } from '../../lib/api';
 
 // ── Tipos internos ──────────────────────────────────────────────────────────
 type AdminTx = ActiveDriverRoute['transactions'][number];
 type EditItem = { product_id: number; product: string; quantity: number; unit_price: number };
+type PMethod = { id: number; name: string; color: string; is_active: boolean };
+type Product = { id: number; name: string; base_price: number };
+type Company = { id: number; name: string };
+
+// ── Modal para crear venta desde el admin ───────────────────────────────────
+interface CreateSaleModalProps {
+  route: ActiveDriverRoute;
+  onClose: () => void;
+  onSaved: () => void;
+}
+
+function CreateSaleModal({ route, onClose, onSaved }: CreateSaleModalProps) {
+  const [products, setProducts]       = useState<Product[]>([]);
+  const [methods, setMethods]         = useState<PMethod[]>([]);
+  const [companies, setCompanies]     = useState<Company[]>([]);
+  const [loading, setLoading]         = useState(true);
+
+  const [quantities, setQuantities]   = useState<Record<number, number>>({});
+  const [methodId, setMethodId]       = useState<number | null>(null);
+  const [companyId, setCompanyId]     = useState<number | null>(null);
+  const [customerName, setCustomerName] = useState('');
+  const [saving, setSaving]           = useState(false);
+
+  useEffect(() => {
+    Promise.all([
+      api.getProducts() as Promise<Product[]>,
+      api.getPaymentMethods() as Promise<PMethod[]>,
+      api.getCompanies() as Promise<Company[]>,
+    ]).then(([prods, meths, comps]) => {
+      setProducts(prods.map(p => ({ ...p, base_price: Number(p.base_price) })));
+      setMethods(meths.filter(m => m.is_active));
+      setCompanies(comps);
+    }).catch(() => {}).finally(() => setLoading(false));
+  }, []);
+
+  const adjust = (productId: number, delta: number) =>
+    setQuantities(prev => {
+      const next = { ...prev, [productId]: Math.max(0, (prev[productId] ?? 0) + delta) };
+      return next;
+    });
+
+  const selectedMethod = methods.find(m => m.id === methodId);
+  const isNegocios = selectedMethod?.name === 'Negocios';
+
+  const items = products
+    .filter(p => (quantities[p.id] ?? 0) > 0)
+    .map(p => ({ product_id: p.id, quantity: quantities[p.id], unit_price: p.base_price }));
+
+  const total = items.reduce((s, i) => s + i.unit_price * i.quantity, 0);
+
+  const canSave = items.length > 0 && methodId !== null && (!isNegocios || companyId !== null);
+
+  const handleSave = async () => {
+    if (!canSave) return;
+    setSaving(true);
+    try {
+      await api.createTransaction({
+        route_id: route.route_id,
+        user_id: route.chofer_id,
+        payment_method_id: methodId,
+        company_id: isNegocios ? companyId : null,
+        customer_name: customerName.trim() || null,
+        items,
+      });
+      onSaved();
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : 'Error al registrar');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-[9999] flex items-end sm:items-center justify-center p-4">
+      <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl flex flex-col max-h-[90vh]">
+        {/* Header */}
+        <div className="px-5 pt-5 pb-4 border-b border-gray-100 shrink-0">
+          <h3 className="font-bold text-gray-900 text-base">➕ Crear venta</h3>
+          <p className="text-xs text-gray-400 mt-0.5">Para {route.chofer_name}</p>
+        </div>
+
+        {loading ? (
+          <div className="flex-1 flex items-center justify-center py-10">
+            <p className="text-sm text-gray-400">Cargando...</p>
+          </div>
+        ) : (
+          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
+            {/* Productos */}
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Productos</p>
+              <div className="grid grid-cols-2 gap-2">
+                {products.map(p => {
+                  const qty = quantities[p.id] ?? 0;
+                  return (
+                    <div key={p.id} className="border border-gray-200 rounded-xl p-3">
+                      <p className="text-xs font-medium text-gray-700 mb-1 truncate">{p.name}</p>
+                      <p className="text-xs text-gray-400 mb-2">${p.base_price.toFixed(0)} c/u</p>
+                      <div className="flex items-center justify-between gap-2">
+                        <button
+                          onClick={() => adjust(p.id, -1)}
+                          disabled={qty === 0}
+                          className="w-7 h-7 rounded-full bg-gray-100 text-gray-600 font-bold disabled:opacity-30 flex items-center justify-center text-base"
+                        >
+                          −
+                        </button>
+                        <span className={`font-bold text-sm w-5 text-center ${qty === 0 ? 'text-gray-300' : 'text-gray-900'}`}>{qty}</span>
+                        <button
+                          onClick={() => adjust(p.id, 1)}
+                          className="w-7 h-7 rounded-full bg-[#1a2fa8] text-white font-bold flex items-center justify-center text-base"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Método de pago */}
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Método de pago</p>
+              <div className="flex flex-wrap gap-2">
+                {methods.map(m => (
+                  <button
+                    key={m.id}
+                    onClick={() => { setMethodId(m.id); if (m.name !== 'Negocios') setCompanyId(null); }}
+                    className={`px-3 py-1.5 rounded-full text-xs font-bold text-white transition-all ${methodId === m.id ? 'ring-2 ring-offset-2 ring-gray-400 scale-105' : 'opacity-70'}`}
+                    style={{ backgroundColor: m.color }}
+                  >
+                    {m.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Empresa (solo Negocios) */}
+            {isNegocios && (
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Empresa</p>
+                <select
+                  value={companyId ?? ''}
+                  onChange={e => setCompanyId(e.target.value ? Number(e.target.value) : null)}
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white"
+                >
+                  <option value="">Seleccionar empresa…</option>
+                  {companies.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Nombre cliente (opcional) */}
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Nombre cliente (opcional)</p>
+              <input
+                type="text"
+                value={customerName}
+                onChange={e => setCustomerName(e.target.value)}
+                placeholder="Ej. Juan Pérez"
+                className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className="px-5 pb-5 pt-3 border-t border-gray-100 shrink-0">
+          <div className="flex justify-between items-center mb-3">
+            <span className="text-sm font-semibold text-gray-500">Total</span>
+            <span className="text-lg font-bold text-gray-900">${total.toLocaleString('es-MX', { minimumFractionDigits: 0 })}</span>
+          </div>
+          <div className="flex gap-3">
+            <button onClick={onClose} className="flex-1 py-3 border border-gray-200 rounded-2xl text-sm text-gray-500">
+              Cancelar
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving || !canSave}
+              className="flex-1 py-3 bg-[#1a2fa8] text-white rounded-2xl text-sm font-semibold disabled:opacity-50"
+            >
+              {saving ? 'Guardando...' : 'Registrar'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ── Modal de edición de venta ───────────────────────────────────────────────
 function EditTxModal({ tx, onSave, onClose }: {
@@ -377,6 +567,19 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
   const [moveSaving,   setMoveSaving]   = useState(false);
   const [finishConfirm, setFinishConfirm] = useState(false);
   const [finishing,     setFinishing]     = useState(false);
+  const [createSaleOpen, setCreateSaleOpen] = useState(false);
+  const [allMethods,     setAllMethods]     = useState<PMethod[]>([]);
+  const [loadingMethods, setLoadingMethods] = useState(false);
+
+  const ensureMethods = async () => {
+    if (allMethods.length || loadingMethods) return;
+    setLoadingMethods(true);
+    try {
+      const data = await api.getPaymentMethods() as PMethod[];
+      setAllMethods(data.filter(m => m.is_active));
+    } catch { /* ignore */ }
+    finally { setLoadingMethods(false); }
+  };
 
   const handleSaveGarrafones = async () => {
     if (garrafonesInput <= 0) return;
@@ -705,7 +908,7 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
                       <div className="flex items-center gap-1.5">
                         <span className="font-semibold text-green-800">${tx.total.toFixed(0)}</span>
                         <button
-                          onClick={() => setMoveModalTx(tx)}
+                          onClick={() => { setMoveModalTx(tx); ensureMethods(); }}
                           className="text-gray-300 hover:text-blue-400 transition-colors px-0.5 text-base leading-none"
                           title="Cambiar método de pago"
                         >
@@ -760,6 +963,25 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
           >
             🎰 Enviar carga extra
           </button>
+        )}
+
+        {/* Botón crear venta — solo rutas activas */}
+        {!muted && (
+          <button
+            onClick={() => setCreateSaleOpen(true)}
+            className="w-full py-2.5 rounded-xl text-sm font-semibold border-2 border-[#1a2fa8] text-[#1a2fa8] hover:bg-[#1a2fa8] hover:text-white transition-colors flex items-center justify-center gap-1.5"
+          >
+            ➕ Crear venta
+          </button>
+        )}
+
+        {/* Modal crear venta */}
+        {createSaleOpen && (
+          <CreateSaleModal
+            route={route}
+            onClose={() => setCreateSaleOpen(false)}
+            onSaved={() => { setCreateSaleOpen(false); onRefresh?.(); }}
+          />
         )}
 
         {/* Botón finalizar ruta — solo rutas activas, para admin */}
@@ -867,7 +1089,7 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
                               ${Number(tx.total).toFixed(0)}
                             </span>
                             <button
-                              onClick={() => setMoveModalTx(tx)}
+                              onClick={() => { setMoveModalTx(tx); ensureMethods(); }}
                               className="text-gray-300 hover:text-blue-400 shrink-0 transition-colors px-0.5 text-base leading-none"
                               title="Cambiar método de pago"
                             >
@@ -905,23 +1127,29 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
                 </div>
               </div>
               <div className="px-5 py-4 space-y-2">
-                {route.by_method
-                  .filter(m => m.id !== moveModalTx.payment_method_id && m.method !== 'Negocios')
-                  .map(m => (
-                    <button
-                      key={m.id}
-                      disabled={moveSaving}
-                      onClick={() => handleMoveMethod(moveModalTx, m.id)}
-                      className="w-full flex items-center justify-between px-4 py-3 rounded-xl border border-gray-200 hover:bg-gray-50 active:bg-gray-100 transition-colors disabled:opacity-50 text-left"
-                    >
-                      <span className="text-xs font-bold px-2.5 py-1 rounded-full text-white" style={{ backgroundColor: m.color }}>
-                        {m.method}
-                      </span>
-                      <span className="text-xs text-gray-400">
-                        {m.count} venta{m.count !== 1 ? 's' : ''} · ${m.total.toLocaleString('es-MX', { minimumFractionDigits: 0 })}
-                      </span>
-                    </button>
-                  ))}
+                {(allMethods.length > 0 ? allMethods : route.by_method)
+                  .filter(m => m.id !== moveModalTx.payment_method_id && ('method' in m ? m.method : m.name) !== 'Negocios')
+                  .map(m => {
+                    const existing = route.by_method.find(bm => bm.id === m.id);
+                    const label = 'method' in m ? m.method : m.name;
+                    return (
+                      <button
+                        key={m.id}
+                        disabled={moveSaving}
+                        onClick={() => handleMoveMethod(moveModalTx, m.id)}
+                        className="w-full flex items-center justify-between px-4 py-3 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors disabled:opacity-50 text-left"
+                      >
+                        <span className="text-xs font-bold px-2.5 py-1 rounded-full text-white" style={{ backgroundColor: m.color }}>
+                          {label}
+                        </span>
+                        {existing && (
+                          <span className="text-xs text-gray-400">
+                            {existing.count} venta{existing.count !== 1 ? 's' : ''} · ${existing.total.toLocaleString('es-MX', { minimumFractionDigits: 0 })}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
               </div>
               <div className="px-5 pb-5">
                 <button

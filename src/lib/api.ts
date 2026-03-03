@@ -32,6 +32,9 @@ export const api = {
   // Products
   getProducts: () => request('/products/index.php'),
 
+  // Payment methods
+  getPaymentMethods: () => request('/payment_methods/index.php'),
+
   // Companies
   getCompanies: () => request('/companies/index.php'),
   createCompany: (name: string) =>

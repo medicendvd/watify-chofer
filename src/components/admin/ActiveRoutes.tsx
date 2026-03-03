@@ -5,9 +5,52 @@ import { api } from '../../lib/api';
 // ── Tipos internos ──────────────────────────────────────────────────────────
 type AdminTx = ActiveDriverRoute['transactions'][number];
 type EditItem = { product_id: number; product: string; quantity: number; unit_price: number };
-type PMethod = { id: number; name: string; color: string; is_active: boolean };
+type PMethod = { id: number; name: string; color: string; icon: string; is_active: boolean };
 type Product = { id: number; name: string; base_price: number };
-type Company = { id: number; name: string; special_prices: Record<number, number> };
+type Company = { id: number; name: string; special_prices: Record<number, number>; payment_method_id: number | null };
+
+// Métodos que requieren seleccionar empresa
+const NEEDS_COMPANY = ['Negocios', 'Negocios en Efectivo', 'Distribuidores'];
+
+// ── Ícono SVG de método de pago (replicado de PaymentMethodCard) ─────────────
+function MethodIcon({ icon, size = 16 }: { icon: string; size?: number }) {
+  const s = size;
+  switch (icon) {
+    case 'banknote': return (
+      <svg width={s} height={s} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+        <rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/>
+        <path d="M6 12h.01M18 12h.01"/>
+      </svg>
+    );
+    case 'credit-card': return (
+      <svg width={s} height={s} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+        <rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/>
+      </svg>
+    );
+    case 'building-2': return (
+      <svg width={s} height={s} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+        <path d="M3 21h18M3 9l9-7 9 7M4 10v11M20 10v11M9 10v4M15 10v4M9 17v4M15 17v4"/>
+      </svg>
+    );
+    case 'smartphone': return (
+      <svg width={s} height={s} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+        <rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01M9 8l2 2 4-4"/>
+      </svg>
+    );
+    case 'store': return (
+      <svg width={s} height={s} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+        <polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+    );
+    case 'arrow-left-right': return (
+      <svg width={s} height={s} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+        <path d="M8 7l-5 5 5 5M3 12h18M16 7l5 5-5 5"/>
+      </svg>
+    );
+    default: return null;
+  }
+}
 
 // ── Modal para crear venta desde el admin ───────────────────────────────────
 interface CreateSaleModalProps {
@@ -41,13 +84,18 @@ function CreateSaleModal({ route, onClose, onSaved }: CreateSaleModalProps) {
   }, []);
 
   const adjust = (productId: number, delta: number) =>
-    setQuantities(prev => {
-      const next = { ...prev, [productId]: Math.max(0, (prev[productId] ?? 0) + delta) };
-      return next;
-    });
+    setQuantities(prev => ({ ...prev, [productId]: Math.max(0, (prev[productId] ?? 0) + delta) }));
 
-  const selectedMethod = methods.find(m => m.id === methodId);
-  const isNegocios = selectedMethod?.name === 'Negocios' || selectedMethod?.name === 'Negocios en Efectivo';
+  const selectedMethod  = methods.find(m => m.id === methodId);
+  const needsCompany    = NEEDS_COMPANY.includes(selectedMethod?.name ?? '');
+  const isDistribuidores = selectedMethod?.name === 'Distribuidores';
+
+  // Empresas filtradas según el método seleccionado (igual que Chofer.tsx)
+  const companiesForMethod = companies.filter(c => {
+    if (!selectedMethod) return false;
+    if (selectedMethod.name === 'Distribuidores') return Number(c.payment_method_id) === selectedMethod.id;
+    return c.payment_method_id === null || Number(c.payment_method_id) === selectedMethod.id;
+  });
 
   const selectedCompany = companies.find(c => c.id === companyId);
   const getPrice = (p: Product) => {
@@ -62,9 +110,8 @@ function CreateSaleModal({ route, onClose, onSaved }: CreateSaleModalProps) {
     .filter(p => (quantities[p.id] ?? 0) > 0)
     .map(p => ({ product_id: p.id, quantity: quantities[p.id], unit_price: getPrice(p) }));
 
-  const total = items.reduce((s, i) => s + i.unit_price * i.quantity, 0);
-
-  const canSave = items.length > 0 && methodId !== null && (!isNegocios || companyId !== null);
+  const total    = items.reduce((s, i) => s + i.unit_price * i.quantity, 0);
+  const canSave  = items.length > 0 && methodId !== null && (!needsCompany || companyId !== null);
 
   const handleSave = async () => {
     if (!canSave) return;
@@ -74,7 +121,7 @@ function CreateSaleModal({ route, onClose, onSaved }: CreateSaleModalProps) {
         route_id: route.route_id,
         user_id: route.chofer_id,
         payment_method_id: methodId,
-        company_id: isNegocios ? companyId : null,
+        company_id: needsCompany ? companyId : null,
         customer_name: customerName.trim() || null,
         items,
       });
@@ -112,20 +159,11 @@ function CreateSaleModal({ route, onClose, onSaved }: CreateSaleModalProps) {
                       <p className="text-xs font-medium text-gray-700 mb-1 truncate">{p.name}</p>
                       <p className="text-xs text-gray-400 mb-2">${getPrice(p).toFixed(0)} c/u</p>
                       <div className="flex items-center justify-between gap-2">
-                        <button
-                          onClick={() => adjust(p.id, -1)}
-                          disabled={qty === 0}
-                          className="w-7 h-7 rounded-full bg-gray-100 text-gray-600 font-bold disabled:opacity-30 flex items-center justify-center text-base"
-                        >
-                          −
-                        </button>
+                        <button onClick={() => adjust(p.id, -1)} disabled={qty === 0}
+                          className="w-7 h-7 rounded-full bg-gray-100 text-gray-600 font-bold disabled:opacity-30 flex items-center justify-center text-base">−</button>
                         <span className={`font-bold text-sm w-5 text-center ${qty === 0 ? 'text-gray-300' : 'text-gray-900'}`}>{qty}</span>
-                        <button
-                          onClick={() => adjust(p.id, 1)}
-                          className="w-7 h-7 rounded-full bg-[#1a2fa8] text-white font-bold flex items-center justify-center text-base"
-                        >
-                          +
-                        </button>
+                        <button onClick={() => adjust(p.id, 1)}
+                          className="w-7 h-7 rounded-full bg-[#1a2fa8] text-white font-bold flex items-center justify-center text-base">+</button>
                       </div>
                     </div>
                   );
@@ -133,25 +171,59 @@ function CreateSaleModal({ route, onClose, onSaved }: CreateSaleModalProps) {
               </div>
             </div>
 
-            {/* Método de pago */}
+            {/* Método de pago — grid 3+3 igual que app chofer */}
             <div>
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Método de pago</p>
-              <div className="flex flex-wrap gap-2">
-                {methods.map(m => (
-                  <button
-                    key={m.id}
-                    onClick={() => { setMethodId(m.id); if (m.name !== 'Negocios') setCompanyId(null); }}
-                    className={`px-3 py-1.5 rounded-full text-xs font-bold text-white transition-all ${methodId === m.id ? 'ring-2 ring-offset-2 ring-gray-400 scale-105' : 'opacity-70'}`}
-                    style={{ backgroundColor: m.color }}
-                  >
-                    {m.name}
-                  </button>
+              <div className="space-y-2">
+                {[methods.slice(0, 3), methods.slice(3)].map((row, ri) => (
+                  <div key={ri} className="grid grid-cols-3 gap-2">
+                    {row.map(m => (
+                      <button
+                        key={m.id}
+                        onClick={() => { setMethodId(m.id); setCompanyId(null); }}
+                        className={`flex items-center gap-1.5 p-2 rounded-xl transition-all w-full border-2 bg-white ${methodId === m.id ? 'shadow-md' : 'border-transparent opacity-75'}`}
+                        style={methodId === m.id ? { borderColor: m.color } : {}}
+                      >
+                        <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                          style={{ backgroundColor: m.color + '20', color: m.color }}>
+                          <MethodIcon icon={m.icon} size={16} />
+                        </div>
+                        <span className="text-xs font-semibold leading-tight text-left"
+                          style={{ color: methodId === m.id ? m.color : '#6b7280' }}>
+                          {m.name}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
                 ))}
               </div>
             </div>
 
-            {/* Empresa (solo Negocios) */}
-            {isNegocios && (
+            {/* Empresa para Distribuidores — cards clicables */}
+            {needsCompany && isDistribuidores && (
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Distribuidor</p>
+                {companiesForMethod.length === 0 ? (
+                  <p className="text-xs text-gray-400 text-center py-3">Sin distribuidores registrados</p>
+                ) : (
+                  <div className="space-y-1.5 max-h-44 overflow-y-auto pr-0.5">
+                    {companiesForMethod.map(c => (
+                      <button
+                        key={c.id}
+                        onClick={() => setCompanyId(c.id)}
+                        className={`w-full text-left px-3 py-2.5 rounded-xl border-2 transition-all text-sm font-medium ${companyId === c.id ? 'shadow-sm' : 'border-gray-200 text-gray-700 hover:bg-gray-50'}`}
+                        style={companyId === c.id ? { borderColor: selectedMethod!.color, color: selectedMethod!.color, backgroundColor: selectedMethod!.color + '10' } : {}}
+                      >
+                        {c.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Empresa para Negocios — dropdown */}
+            {needsCompany && !isDistribuidores && (
               <div>
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Empresa</p>
                 <select
@@ -160,7 +232,7 @@ function CreateSaleModal({ route, onClose, onSaved }: CreateSaleModalProps) {
                   className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white"
                 >
                   <option value="">Seleccionar empresa…</option>
-                  {companies.map(c => (
+                  {companiesForMethod.map(c => (
                     <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
                 </select>
@@ -191,11 +263,8 @@ function CreateSaleModal({ route, onClose, onSaved }: CreateSaleModalProps) {
             <button onClick={onClose} className="flex-1 py-3 border border-gray-200 rounded-2xl text-sm text-gray-500">
               Cancelar
             </button>
-            <button
-              onClick={handleSave}
-              disabled={saving || !canSave}
-              className="flex-1 py-3 bg-[#1a2fa8] text-white rounded-2xl text-sm font-semibold disabled:opacity-50"
-            >
+            <button onClick={handleSave} disabled={saving || !canSave}
+              className="flex-1 py-3 bg-[#1a2fa8] text-white rounded-2xl text-sm font-semibold disabled:opacity-50">
               {saving ? 'Guardando...' : 'Registrar'}
             </button>
           </div>

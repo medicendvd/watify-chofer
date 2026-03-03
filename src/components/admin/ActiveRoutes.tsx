@@ -10,7 +10,7 @@ type Product = { id: number; name: string; base_price: number };
 type Company = { id: number; name: string; special_prices: Record<number, number>; payment_method_id: number | null };
 
 // Métodos que requieren seleccionar empresa
-const NEEDS_COMPANY = ['Negocios', 'Negocios en Efectivo', 'Distribuidores'];
+const NEEDS_COMPANY = ['Negocios', 'Negocios en Efectivo', 'Distribuidores', 'Transferencia'];
 
 // ── Ícono SVG de método de pago (replicado de PaymentMethodCard) ─────────────
 function MethodIcon({ icon, size = 16 }: { icon: string; size?: number }) {
@@ -94,7 +94,8 @@ function CreateSaleModal({ route, onClose, onSaved }: CreateSaleModalProps) {
   const companiesForMethod = companies.filter(c => {
     if (!selectedMethod) return false;
     if (selectedMethod.name === 'Distribuidores') return Number(c.payment_method_id) === selectedMethod.id;
-    return c.payment_method_id === null || Number(c.payment_method_id) === selectedMethod.id;
+    if (selectedMethod.name === 'Transferencia')  return Number(c.payment_method_id) === selectedMethod.id;
+    return c.payment_method_id === null;
   });
 
   const selectedCompany = companies.find(c => c.id === companyId);

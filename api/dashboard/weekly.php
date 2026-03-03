@@ -128,7 +128,7 @@ foreach ($rows as $r) {
     if (!isset($driverMap[$uid]))              $driverMap[$uid] = ['name' => $r['user_name'], 'days' => []];
     if (!isset($driverMap[$uid]['days'][$day])) $driverMap[$uid]['days'][$day] = $emptyDay;
     match ($method) {
-        'Efectivo', 'Negocios en Efectivo' =>
+        'Efectivo', 'Negocios en Efectivo', 'Distribuidores' =>
             $driverMap[$uid]['days'][$day]['efectivo'] += (float)$r['total'],
         'Negocios'      => $driverMap[$uid]['days'][$day]['negocios']      += (float)$r['total'],
         'Link'          => $driverMap[$uid]['days'][$day]['link']          += (float)$r['total'],
@@ -163,7 +163,7 @@ foreach ($driverMap as $uid => $driverData) {
         $incidencias   = $incData['total'];
         $incidentsList = $incData['list'];
         $facturadoAmount = $data['facturado'] ?? 0;
-        $efectivoNeto    = max(0, $data['efectivo'] - $incidencias);
+        $efectivoNeto    = max(0, $data['efectivo'] - max(0, $incidencias));
         $sobre           = max(0, $efectivoNeto - $facturadoAmount);
         // El total del día usa el efectivo bruto: el dinero retirado (sacar dinero)
         // sigue formando parte del corte, solo sale del sobre del chofer.

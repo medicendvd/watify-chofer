@@ -24,6 +24,7 @@ if ($currentUser['role'] !== 'Admin' && $transaction['user_id'] !== $currentUser
 
 // DELETE
 if ($method === 'DELETE') {
+    $pdo->prepare('DELETE FROM transaction_items WHERE transaction_id = ?')->execute([$id]);
     $pdo->prepare('DELETE FROM transactions WHERE id = ?')->execute([$id]);
     jsonResponse(['ok' => true]);
 }

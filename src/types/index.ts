@@ -260,6 +260,7 @@ export interface SucursalSummary {
   transaction_count: number;
   by_method: { method: string; color: string; icon: string; total: number; count: number }[];
   by_product: { product: string; units: number; total: number }[];
+  negocios_companies: { company: string; total: number; count: number }[];
 }
 
 export interface DashboardData {

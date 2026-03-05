@@ -60,6 +60,25 @@ $byMethod = array_map(fn($m) => [
     'count'  => (int)$m['count'],
 ], $stmtMethod->fetchAll());
 
+// Empresas de Negocios a crédito
+$stmtCompanies = $pdo->prepare("
+    SELECT c.name AS company,
+           SUM(t.total) AS total,
+           COUNT(t.id)  AS count
+    FROM transactions t
+    JOIN companies c       ON c.id  = t.company_id
+    JOIN payment_methods pm ON pm.id = t.payment_method_id
+    WHERE t.route_id = ? AND pm.name = 'Negocios'
+    GROUP BY c.id
+    ORDER BY SUM(t.total) DESC
+");
+$stmtCompanies->execute([$routeId]);
+$negociosCompanies = array_map(fn($c) => [
+    'company' => $c['company'],
+    'total'   => (float)$c['total'],
+    'count'   => (int)$c['count'],
+], $stmtCompanies->fetchAll());
+
 // Por producto
 $stmtProduct = $pdo->prepare("
     SELECT p.name AS product,
@@ -89,4 +108,5 @@ jsonResponse([
     'transaction_count' => (int)$txCount,
     'by_method'         => $byMethod,
     'by_product'        => $byProduct,
+    'negocios_companies' => $negociosCompanies,
 ]);

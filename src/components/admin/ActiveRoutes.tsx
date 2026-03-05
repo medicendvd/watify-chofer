@@ -12,6 +12,12 @@ type Company = { id: number; name: string; special_prices: Record<number, number
 // Métodos que requieren seleccionar empresa
 const NEEDS_COMPANY = ['Negocios', 'Distribuidores', 'Transferencia'];
 
+// Empresas con sucursales: requieren preguntar cuál antes de registrar
+const BRANCH_QUESTIONS: Record<string, string> = {
+  'Región Sanitaria': '¿A cuál centro de salud se le entregó?',
+  'Creparis':         '¿Cuál sucursal es?',
+};
+
 // ── Ícono SVG de método de pago (replicado de PaymentMethodCard) ─────────────
 function MethodIcon({ icon, size = 16 }: { icon: string; size?: number }) {
   const s = size;
@@ -99,6 +105,7 @@ function CreateSaleModal({ route, onClose, onSaved }: CreateSaleModalProps) {
   });
 
   const selectedCompany = companies.find(c => c.id === companyId);
+  const branchQuestion  = selectedCompany ? (BRANCH_QUESTIONS[selectedCompany.name] ?? null) : null;
   const getPrice = (p: Product) => {
     if (selectedCompany) {
       const special = selectedCompany.special_prices[p.id];
@@ -112,7 +119,7 @@ function CreateSaleModal({ route, onClose, onSaved }: CreateSaleModalProps) {
     .map(p => ({ product_id: p.id, quantity: quantities[p.id], unit_price: getPrice(p) }));
 
   const total    = items.reduce((s, i) => s + i.unit_price * i.quantity, 0);
-  const canSave  = items.length > 0 && methodId !== null && (!needsCompany || companyId !== null);
+  const canSave  = items.length > 0 && methodId !== null && (!needsCompany || companyId !== null) && (!branchQuestion || customerName.trim() !== '');
 
   const handleSave = async () => {
     if (!canSave) return;
@@ -240,16 +247,26 @@ function CreateSaleModal({ route, onClose, onSaved }: CreateSaleModalProps) {
               </div>
             )}
 
-            {/* Nombre cliente (opcional) */}
+            {/* Nombre cliente / Pregunta de sucursal */}
             <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Nombre cliente (opcional)</p>
+              <p className={`text-xs font-semibold uppercase tracking-wide mb-2 ${branchQuestion ? 'text-[#1a2fa8]' : 'text-gray-500'}`}>
+                {branchQuestion ?? 'Nombre cliente (opcional)'}
+                {branchQuestion && <span className="text-red-400 ml-1">*</span>}
+              </p>
               <input
                 type="text"
                 value={customerName}
                 onChange={e => setCustomerName(e.target.value)}
-                placeholder="Ej. Juan Pérez"
-                className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+                placeholder={branchQuestion ? 'Requerido' : 'Ej. Juan Pérez'}
+                className={`w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 ${
+                  branchQuestion
+                    ? 'border-[#1a2fa8] focus:ring-blue-300'
+                    : 'border-gray-200 focus:ring-blue-300'
+                }`}
               />
+              {branchQuestion && !customerName.trim() && (
+                <p className="text-xs text-red-400 mt-1">Este campo es obligatorio para continuar</p>
+              )}
             </div>
           </div>
         )}
@@ -1368,25 +1385,40 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
                         ${g.total.toLocaleString('es-MX', { minimumFractionDigits: 0 })}
                       </span>
                     </div>
-                    {g.txs.map(tx => (
-                      <div key={tx.id} className="flex items-center justify-between mt-1 pl-2 text-xs text-gray-500">
-                        <span>{tx.items.map(i => `${i.product} ×${i.quantity}`).join(', ')}</span>
-                        <button onClick={() => setEditingTx(tx)}
-                          className="text-gray-400 hover:text-gray-600 ml-2 px-1">
-                          ✏️
-                        </button>
-                        <button
-                          onClick={() => setTxToDelete(tx.id)}
-                          disabled={deletingTxId === tx.id}
-                          className="text-gray-300 hover:text-red-400 transition-colors px-0.5 disabled:opacity-40"
-                          title="Eliminar venta"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
-                            <path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5a.75.75 0 0 1 .786-.711Z" clipRule="evenodd" />
-                          </svg>
-                        </button>
-                      </div>
-                    ))}
+                    {g.txs.map(tx => {
+                      const txGarr = tx.items.reduce((s, i) => s + i.quantity, 0);
+                      return (
+                        <div key={tx.id} className="mt-1.5 pl-2 border-l-2 border-gray-200">
+                          <div className="flex items-start justify-between gap-1">
+                            <div className="flex-1 min-w-0">
+                              {tx.customer_name && (
+                                <p className="text-xs font-semibold text-gray-700 truncate">{tx.customer_name}</p>
+                              )}
+                              <p className="text-xs text-gray-400">
+                                {txGarr} garr · {tx.items.map(i => `${i.product} ×${i.quantity}`).join(', ')}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <span className="text-xs font-semibold text-gray-700">${tx.total.toFixed(0)}</span>
+                              <button onClick={() => setEditingTx(tx)}
+                                className="text-gray-400 hover:text-gray-600 px-0.5">
+                                ✏️
+                              </button>
+                              <button
+                                onClick={() => setTxToDelete(tx.id)}
+                                disabled={deletingTxId === tx.id}
+                                className="text-gray-300 hover:text-red-400 transition-colors px-0.5 disabled:opacity-40"
+                                title="Eliminar venta"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
+                                  <path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5a.75.75 0 0 1 .786-.711Z" clipRule="evenodd" />
+                                </svg>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 ))}
               </div>

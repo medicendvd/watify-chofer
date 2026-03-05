@@ -253,7 +253,7 @@ function CreateSaleModal({ route, onClose, onSaved }: CreateSaleModalProps) {
             {/* Pregunta de sucursal — solo cuando aplica */}
             {branchQuestion && (
               <div>
-                <p className="text-xs font-semibold text-[#1a2fa8] uppercase tracking-wide mb-2">
+                <p className="text-xs font-semibold text-black uppercase tracking-wide mb-2">
                   {branchQuestion} <span className="text-red-400">*</span>
                 </p>
                 <input

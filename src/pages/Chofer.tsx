@@ -305,7 +305,7 @@ export default function Chofer() {
           {/* Pregunta de sucursal — aparece justo debajo del selector de empresa */}
           {branchQ && (
             <div ref={customerNameRef} className="mt-3">
-              <label className={`block text-xs font-semibold uppercase tracking-wide mb-1.5 ${customerNameError ? 'text-red-500' : 'text-water-600'}`}>
+              <label className={`block text-xs font-semibold uppercase tracking-wide mb-1.5 ${customerNameError ? 'text-red-500' : 'text-black'}`}>
                 {branchQ} <span className="text-red-400">*</span>
               </label>
               <input

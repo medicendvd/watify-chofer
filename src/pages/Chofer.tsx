@@ -22,6 +22,9 @@ const BRANCH_QUESTIONS: Record<string, string> = {
   'Región Sanitaria': '¿A cuál centro de salud se le entregó?',
   'Creparis':         '¿Cuál sucursal es?',
 };
+const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+const getBranchQuestion = (name: string) =>
+  Object.entries(BRANCH_QUESTIONS).find(([k]) => normalize(k) === normalize(name))?.[1] ?? null;
 
 const PAYMENT_METHODS: PaymentMethod[] = [
   { id: 1, name: 'Efectivo',           color: '#22c55e', icon: 'banknote',         is_active: true },
@@ -137,7 +140,7 @@ export default function Chofer() {
     if (['Negocios a crédito', 'Distribuidores', 'Transferencia'].includes(selectedMethod.name) && !selectedCompany) {
       setError('Selecciona la empresa'); return;
     }
-    const branchQuestion = company ? (BRANCH_QUESTIONS[company.name] ?? null) : null;
+    const branchQuestion = company ? getBranchQuestion(company.name) : null;
     if ((selectedMethod.name === 'Link' || selectedMethod.name === 'Tarjeta' || branchQuestion) && !customerName.trim()) {
       setCustomerNameError(true);
       customerNameRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -218,7 +221,7 @@ export default function Chofer() {
 
         {/* Nombre del cliente / Pregunta de sucursal */}
         {(() => {
-          const branchQ = company ? (BRANCH_QUESTIONS[company.name] ?? null) : null;
+          const branchQ = company ? getBranchQuestion(company.name) : null;
           const isRequired = branchQ || selectedMethod.name === 'Link' || selectedMethod.name === 'Tarjeta';
           return (
             <div ref={customerNameRef}>

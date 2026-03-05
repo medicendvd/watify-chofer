@@ -17,6 +17,9 @@ const BRANCH_QUESTIONS: Record<string, string> = {
   'Región Sanitaria': '¿A cuál centro de salud se le entregó?',
   'Creparis':         '¿Cuál sucursal es?',
 };
+const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+const getBranchQuestion = (name: string) =>
+  Object.entries(BRANCH_QUESTIONS).find(([k]) => normalize(k) === normalize(name))?.[1] ?? null;
 
 // ── Ícono SVG de método de pago (replicado de PaymentMethodCard) ─────────────
 function MethodIcon({ icon, size = 16 }: { icon: string; size?: number }) {
@@ -105,7 +108,7 @@ function CreateSaleModal({ route, onClose, onSaved }: CreateSaleModalProps) {
   });
 
   const selectedCompany = companies.find(c => c.id === companyId);
-  const branchQuestion  = selectedCompany ? (BRANCH_QUESTIONS[selectedCompany.name] ?? null) : null;
+  const branchQuestion  = selectedCompany ? getBranchQuestion(selectedCompany.name) : null;
   const getPrice = (p: Product) => {
     if (selectedCompany) {
       const special = selectedCompany.special_prices[p.id];

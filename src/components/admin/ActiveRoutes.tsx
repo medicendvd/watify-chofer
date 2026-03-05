@@ -250,27 +250,38 @@ function CreateSaleModal({ route, onClose, onSaved }: CreateSaleModalProps) {
               </div>
             )}
 
-            {/* Nombre cliente / Pregunta de sucursal */}
-            <div>
-              <p className={`text-xs font-semibold uppercase tracking-wide mb-2 ${branchQuestion ? 'text-[#1a2fa8]' : 'text-gray-500'}`}>
-                {branchQuestion ?? 'Nombre cliente (opcional)'}
-                {branchQuestion && <span className="text-red-400 ml-1">*</span>}
-              </p>
-              <input
-                type="text"
-                value={customerName}
-                onChange={e => setCustomerName(e.target.value)}
-                placeholder={branchQuestion ? 'Requerido' : 'Ej. Juan Pérez'}
-                className={`w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 ${
-                  branchQuestion
-                    ? 'border-[#1a2fa8] focus:ring-blue-300'
-                    : 'border-gray-200 focus:ring-blue-300'
-                }`}
-              />
-              {branchQuestion && !customerName.trim() && (
-                <p className="text-xs text-red-400 mt-1">Este campo es obligatorio para continuar</p>
-              )}
-            </div>
+            {/* Pregunta de sucursal — solo cuando aplica */}
+            {branchQuestion && (
+              <div>
+                <p className="text-xs font-semibold text-[#1a2fa8] uppercase tracking-wide mb-2">
+                  {branchQuestion} <span className="text-red-400">*</span>
+                </p>
+                <input
+                  type="text"
+                  value={customerName}
+                  onChange={e => setCustomerName(e.target.value)}
+                  placeholder="Requerido"
+                  className="w-full px-3 py-2.5 border border-[#1a2fa8] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+                />
+                {!customerName.trim() && (
+                  <p className="text-xs text-red-400 mt-1">Este campo es obligatorio para continuar</p>
+                )}
+              </div>
+            )}
+
+            {/* Nombre cliente (opcional) */}
+            {!branchQuestion && (
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Nombre cliente (opcional)</p>
+                <input
+                  type="text"
+                  value={customerName}
+                  onChange={e => setCustomerName(e.target.value)}
+                  placeholder="Ej. Juan Pérez"
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+                />
+              </div>
+            )}
           </div>
         )}
 

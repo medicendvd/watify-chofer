@@ -117,7 +117,8 @@ export default function Chofer() {
     await refreshRoute();
   };
 
-  const company = companies.find(c => c.id === selectedCompany) ?? null;
+  const company  = companies.find(c => c.id === selectedCompany) ?? null;
+  const branchQ  = company ? getBranchQuestion(company.name) : null;
 
   const getPrice = (product: Product): number => {
     if (company && company.special_prices[product.id] !== undefined) {
@@ -140,8 +141,7 @@ export default function Chofer() {
     if (['Negocios a crédito', 'Distribuidores', 'Transferencia'].includes(selectedMethod.name) && !selectedCompany) {
       setError('Selecciona la empresa'); return;
     }
-    const branchQuestion = company ? getBranchQuestion(company.name) : null;
-    if ((selectedMethod.name === 'Link' || selectedMethod.name === 'Tarjeta' || branchQuestion) && !customerName.trim()) {
+    if ((selectedMethod.name === 'Link' || selectedMethod.name === 'Tarjeta' || branchQ) && !customerName.trim()) {
       setCustomerNameError(true);
       customerNameRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       setTimeout(() => setCustomerNameError(false), 500);
@@ -219,37 +219,32 @@ export default function Chofer() {
 
       <div className="px-4 mt-5 space-y-5 max-w-md mx-auto">
 
-        {/* Nombre del cliente / Pregunta de sucursal */}
-        {(() => {
-          const branchQ = company ? getBranchQuestion(company.name) : null;
-          const isRequired = branchQ || selectedMethod.name === 'Link' || selectedMethod.name === 'Tarjeta';
-          return (
-            <div ref={customerNameRef}>
-              <label className={`block text-xs font-semibold uppercase tracking-wide mb-1.5 ${customerNameError ? 'text-red-500' : branchQ ? 'text-water-600' : 'text-gray-500'}`}>
-                {branchQ ?? 'Nombre del cliente'}
-                {isRequired && <span className="ml-1 text-red-400">*</span>}
-              </label>
-              <input
-                type="text"
-                value={customerName}
-                onChange={e => { setCustomerName(e.target.value); setCustomerNameError(false); }}
-                placeholder={isRequired ? 'Requerido' : 'Opcional'}
-                className={`w-full px-4 py-3 border rounded-xl text-gray-800 bg-white focus:outline-none text-sm transition-colors ${
-                  customerNameError
-                    ? 'border-red-400 ring-2 ring-red-300 animate-shake'
-                    : branchQ
-                    ? 'border-water-400 focus:ring-2 focus:ring-water-400'
-                    : 'border-gray-200 focus:ring-2 focus:ring-water-400'
-                }`}
-              />
-              {customerNameError && (
-                <p className="text-xs text-red-500 mt-1.5 font-medium">
-                  {branchQ ? 'Este campo es obligatorio' : 'Se necesita llenar el nombre del cliente'}
-                </p>
-              )}
-            </div>
-          );
-        })()}
+        {/* Nombre del cliente */}
+        <div ref={customerNameRef}>
+          <label className={`block text-xs font-semibold uppercase tracking-wide mb-1.5 ${customerNameError && !branchQ ? 'text-red-500' : 'text-gray-500'}`}>
+            Nombre del cliente
+            {(selectedMethod.name === 'Link' || selectedMethod.name === 'Tarjeta') && (
+              <span className="ml-1 text-red-400">*</span>
+            )}
+          </label>
+          <input
+            type="text"
+            value={branchQ ? '' : customerName}
+            onChange={e => { if (!branchQ) { setCustomerName(e.target.value); setCustomerNameError(false); } }}
+            readOnly={!!branchQ}
+            placeholder={selectedMethod.name === 'Link' || selectedMethod.name === 'Tarjeta' ? 'Requerido' : 'Opcional'}
+            className={`w-full px-4 py-3 border rounded-xl text-gray-800 bg-white focus:outline-none text-sm transition-colors ${
+              customerNameError && !branchQ
+                ? 'border-red-400 ring-2 ring-red-300 animate-shake'
+                : 'border-gray-200 focus:ring-2 focus:ring-water-400'
+            } ${branchQ ? 'opacity-40 cursor-not-allowed' : ''}`}
+          />
+          {customerNameError && !branchQ && (
+            <p className="text-xs text-red-500 mt-1.5 font-medium">
+              Se necesita llenar el nombre del cliente
+            </p>
+          )}
+        </div>
 
         {/* Productos */}
         <div>
@@ -305,6 +300,29 @@ export default function Chofer() {
               value={selectedCompany}
               onChange={setSelectedCompany}
             />
+          )}
+
+          {/* Pregunta de sucursal — aparece justo debajo del selector de empresa */}
+          {branchQ && (
+            <div ref={customerNameRef} className="mt-3">
+              <label className={`block text-xs font-semibold uppercase tracking-wide mb-1.5 ${customerNameError ? 'text-red-500' : 'text-water-600'}`}>
+                {branchQ} <span className="text-red-400">*</span>
+              </label>
+              <input
+                type="text"
+                value={customerName}
+                onChange={e => { setCustomerName(e.target.value); setCustomerNameError(false); }}
+                placeholder="Requerido"
+                className={`w-full px-4 py-3 border rounded-xl text-gray-800 bg-white focus:outline-none text-sm transition-colors ${
+                  customerNameError
+                    ? 'border-red-400 ring-2 ring-red-300 animate-shake'
+                    : 'border-water-400 focus:ring-2 focus:ring-water-400'
+                }`}
+              />
+              {customerNameError && (
+                <p className="text-xs text-red-500 mt-1.5 font-medium">Este campo es obligatorio</p>
+              )}
+            </div>
           )}
         </div>
 

@@ -95,11 +95,12 @@ export default function WeeklyTable({ days, weekStart, weekEnd, driverName, driv
   const [adjustSaving, setAdjustSaving]   = useState(false);
 
   // Estado para el modal de sacar dinero
-  const [withdrawDay,    setWithdrawDay]    = useState<{ date: string } | null>(null);
-  const [withdrawAmount, setWithdrawAmount] = useState('');
-  const [withdrawReason, setWithdrawReason] = useState('');
-  const [withdrawCustom, setWithdrawCustom] = useState('');
-  const [withdrawSaving, setWithdrawSaving] = useState(false);
+  const [withdrawDay,        setWithdrawDay]        = useState<{ date: string } | null>(null);
+  const [withdrawAmount,     setWithdrawAmount]     = useState('');
+  const [withdrawReason,     setWithdrawReason]     = useState('');
+  const [withdrawCustom,     setWithdrawCustom]     = useState('');
+  const [withdrawPersonName, setWithdrawPersonName] = useState('');
+  const [withdrawSaving,     setWithdrawSaving]     = useState(false);
 
   const today = new Date().toISOString().slice(0, 10);
 
@@ -139,7 +140,14 @@ export default function WeeklyTable({ days, weekStart, weekEnd, driverName, driv
     if (!withdrawDay) return;
     const amount = parseFloat(withdrawAmount);
     if (isNaN(amount) || amount <= 0) return;
-    const description = withdrawReason === 'Otro' ? withdrawCustom.trim() : withdrawReason;
+    let description: string;
+    if (withdrawReason === 'Otro') {
+      description = withdrawCustom.trim();
+    } else if (withdrawReason === 'Préstamo a personal') {
+      description = `Préstamo a personal: ${withdrawPersonName.trim()}`;
+    } else {
+      description = withdrawReason;
+    }
     if (!description) return;
     setWithdrawSaving(true);
     try {
@@ -148,6 +156,7 @@ export default function WeeklyTable({ days, weekStart, weekEnd, driverName, driv
       setWithdrawAmount('');
       setWithdrawReason('');
       setWithdrawCustom('');
+      setWithdrawPersonName('');
     } catch (e: unknown) {
       alert(e instanceof Error ? e.message : 'Error al guardar');
     } finally {
@@ -290,7 +299,7 @@ export default function WeeklyTable({ days, weekStart, weekEnd, driverName, driv
                               {/* Botón sacar dinero */}
                               {canConfirm && !isFuture && !isEmpty && onWithdrawCash && (
                                 <button
-                                  onClick={() => { setWithdrawDay({ date: d.date }); setWithdrawAmount(''); setWithdrawReason(''); setWithdrawCustom(''); }}
+                                  onClick={() => { setWithdrawDay({ date: d.date }); setWithdrawAmount(''); setWithdrawReason(''); setWithdrawCustom(''); setWithdrawPersonName(''); }}
                                   className="text-[10px] font-semibold text-purple-600 border border-purple-300 rounded-full px-2 py-0.5 hover:bg-purple-600 hover:text-white transition-colors whitespace-nowrap"
                                 >
                                   Sacar Dinero
@@ -403,7 +412,11 @@ export default function WeeklyTable({ days, weekStart, weekEnd, driverName, driv
                   {WITHDRAW_REASONS.map(reason => (
                     <button
                       key={reason} type="button"
-                      onClick={() => { setWithdrawReason(reason); if (reason !== 'Otro') setWithdrawCustom(''); }}
+                      onClick={() => {
+                        setWithdrawReason(reason);
+                        if (reason !== 'Otro') setWithdrawCustom('');
+                        if (reason !== 'Préstamo a personal') setWithdrawPersonName('');
+                      }}
                       className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-colors text-left ${
                         withdrawReason === reason
                           ? 'bg-purple-600 text-white border-purple-600'
@@ -414,6 +427,21 @@ export default function WeeklyTable({ days, weekStart, weekEnd, driverName, driv
                     </button>
                   ))}
                 </div>
+                {withdrawReason === 'Préstamo a personal' && (
+                  <div className="mt-3">
+                    <label className="text-xs font-semibold text-gray-500 block mb-1">
+                      ¿A quién se le hará el préstamo?
+                    </label>
+                    <textarea
+                      value={withdrawPersonName}
+                      onChange={e => setWithdrawPersonName(e.target.value)}
+                      placeholder="Nombre de la persona..."
+                      rows={2}
+                      autoFocus
+                      className="w-full px-3 py-2.5 border border-purple-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300 resize-none"
+                    />
+                  </div>
+                )}
                 {withdrawReason === 'Otro' && (
                   <textarea
                     value={withdrawCustom}
@@ -437,7 +465,9 @@ export default function WeeklyTable({ days, weekStart, weekEnd, driverName, driv
                 disabled={
                   withdrawSaving || !withdrawAmount ||
                   isNaN(parseFloat(withdrawAmount)) || parseFloat(withdrawAmount) <= 0 ||
-                  !withdrawReason || (withdrawReason === 'Otro' && !withdrawCustom.trim())
+                  !withdrawReason ||
+                  (withdrawReason === 'Otro' && !withdrawCustom.trim()) ||
+                  (withdrawReason === 'Préstamo a personal' && !withdrawPersonName.trim())
                 }
                 className="flex-1 py-3 bg-purple-600 text-white rounded-2xl text-sm font-semibold disabled:opacity-50 hover:bg-purple-700 transition-colors"
               >

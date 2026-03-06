@@ -141,8 +141,9 @@ export default function PerformanceCharts({ data, analytics, analyticsLoading }:
     return row;
   });
 
-  // Mejores / peores días de semana
-  const sortedDow  = [...dowAnalysis].sort((a, b) => b.avg_total - a.avg_total);
+  // Mejores / peores días de semana — solo Lun-Vie (dow 0-4)
+  const weekdayDow = dowAnalysis.filter(d => d.dow <= 4);
+  const sortedDow  = [...weekdayDow].sort((a, b) => b.avg_total - a.avg_total);
   const bestDay    = sortedDow[0];
   const worstDay   = sortedDow[sortedDow.length - 1];
 

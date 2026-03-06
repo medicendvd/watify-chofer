@@ -68,6 +68,12 @@ export const api = {
   // Analytics (tendencias históricas)
   getAnalytics: () => request('/dashboard/analytics.php'),
 
+  // Consumo mensual de empresas
+  getCompaniesMonthly: (month?: string) => {
+    const params = month ? `?month=${month}` : '';
+    return request(`/dashboard/companies_monthly.php${params}`);
+  },
+
   // Weekly summary
   getWeeklySummary: () => request('/dashboard/weekly.php'),
   confirmWeeklyDay: (chofer_id: number, date: string) =>

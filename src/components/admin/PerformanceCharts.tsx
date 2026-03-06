@@ -4,12 +4,17 @@ import {
   ResponsiveContainer, PieChart, Pie, Cell, CartesianGrid,
   ReferenceLine, ComposedChart, Line, Legend,
 } from 'recharts';
-import type { DashboardData, AnalyticsData } from '../../types';
+import type { DashboardData, AnalyticsData, CompaniesMonthlyData } from '../../types';
+import CompaniesTab from './CompaniesTab';
 
 interface Props {
   data:      DashboardData;
   analytics: AnalyticsData | null;
   analyticsLoading: boolean;
+  companiesData:    CompaniesMonthlyData | null;
+  companiesLoading: boolean;
+  companiesMonth:   string;
+  onChangeCompaniesMonth: (m: string) => void;
 }
 
 const NAVY  = '#0f1c5e';
@@ -80,9 +85,9 @@ function LoadingSkeleton() {
   );
 }
 
-type ChartTab = 'tendencia' | 'choferes' | 'metodos' | 'patrones';
+type ChartTab = 'tendencia' | 'choferes' | 'metodos' | 'patrones' | 'empresas';
 
-export default function PerformanceCharts({ data, analytics, analyticsLoading }: Props) {
+export default function PerformanceCharts({ data, analytics, analyticsLoading, companiesData, companiesLoading, companiesMonth, onChangeCompaniesMonth }: Props) {
   const [activeTab, setActiveTab] = useState<ChartTab>('tendencia');
 
   // ── Datos de hoy ────────────────────────────────────────────────────────────
@@ -152,6 +157,7 @@ export default function PerformanceCharts({ data, analytics, analyticsLoading }:
     { key: 'choferes',  label: 'Choferes',   icon: '🚚' },
     { key: 'metodos',   label: 'Métodos',    icon: '💳' },
     { key: 'patrones',  label: 'Patrones',   icon: '📊' },
+    { key: 'empresas',  label: 'Empresas',   icon: '🏢' },
   ];
 
   return (
@@ -604,6 +610,24 @@ export default function PerformanceCharts({ data, analytics, analyticsLoading }:
                 )}
               </div>
             </div>
+          )}
+
+          {/* ── EMPRESAS ──────────────────────────────────────────────── */}
+          {activeTab === 'empresas' && (
+            companiesLoading ? (
+              <div className="space-y-4">
+                <LoadingSkeleton />
+                <LoadingSkeleton />
+              </div>
+            ) : companiesData ? (
+              <CompaniesTab
+                data={companiesData}
+                month={companiesMonth}
+                onChangeMonth={onChangeCompaniesMonth}
+              />
+            ) : (
+              <p className="text-sm text-gray-400 text-center py-10">Sin datos de empresas</p>
+            )
           )}
 
         </div>

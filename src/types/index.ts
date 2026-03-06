@@ -311,6 +311,38 @@ export interface DowPoint {
   day_count: number;
 }
 
+export interface CompanyProductBreakdown {
+  product: string;
+  units:   number;
+  total:   number;
+}
+
+export interface CompanyMonthlyRow {
+  company_id: number;
+  company:    string;
+  visits:     number;
+  units:      number;
+  total:      number;
+  products:   CompanyProductBreakdown[];
+}
+
+export interface CompanyDailyPoint {
+  day:    string;
+  label:  string;
+  total:  number;
+  visits: number;
+}
+
+export interface CompaniesMonthlyData {
+  month:        string;
+  month_label:  string;
+  grand_total:  number;
+  grand_units:  number;
+  grand_visits: number;
+  companies:    CompanyMonthlyRow[];
+  daily_trend:  CompanyDailyPoint[];
+}
+
 export interface AnalyticsData {
   weekly_trend:  WeeklyTrendPoint[];
   monthly_trend: MonthlyTrendPoint[];

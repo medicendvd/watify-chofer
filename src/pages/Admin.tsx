@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import logo from '../assets/logo-watify.svg';
 import { useAuthContext } from '../store/authContext';
 import { api } from '../lib/api';
-import type { DashboardData, ActiveDriverRoute, LinkPayment, SucursalSummary, AnalyticsData } from '../types';
+import type { DashboardData, ActiveDriverRoute, LinkPayment, SucursalSummary, AnalyticsData, CompaniesMonthlyData } from '../types';
 import { Link, useSearchParams } from 'react-router-dom';
 import SummaryCards from '../components/admin/SummaryCards';
 import DriverSummary from '../components/admin/DriverSummary';
@@ -85,6 +85,28 @@ export default function Admin() {
     }
   }, []);
 
+  // Empresas — consumo mensual
+  const [companiesData,    setCompaniesData]    = useState<CompaniesMonthlyData | null>(null);
+  const [companiesLoading, setCompaniesLoading] = useState(false);
+  const [companiesMonth,   setCompaniesMonth]   = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  });
+
+  const loadCompanies = useCallback(async (month?: string) => {
+    setCompaniesLoading(true);
+    try {
+      setCompaniesData(await api.getCompaniesMonthly(month) as CompaniesMonthlyData);
+    } catch { /* silencioso */ } finally {
+      setCompaniesLoading(false);
+    }
+  }, []);
+
+  const handleChangeCompaniesMonth = (m: string) => {
+    setCompaniesMonth(m);
+    loadCompanies(m);
+  };
+
   // Sucursal
   const [sucursalSummary, setSucursalSummary] = useState<SucursalSummary | null>(null);
   const [sucursalLoading, setSucursalLoading] = useState(false);
@@ -142,12 +164,13 @@ export default function Admin() {
     }
   }, []);
 
-  // Cargar analytics solo cuando el usuario abre el tab de gráficas
+  // Cargar analytics y empresas solo cuando el usuario abre el tab de gráficas
   useEffect(() => {
-    if (tab === 'graficas' && !analytics && !analyticsLoading) {
-      loadAnalytics();
+    if (tab === 'graficas') {
+      if (!analytics && !analyticsLoading) loadAnalytics();
+      if (!companiesData && !companiesLoading) loadCompanies(companiesMonth);
     }
-  }, [tab, analytics, analyticsLoading, loadAnalytics]);
+  }, [tab, analytics, analyticsLoading, loadAnalytics, companiesData, companiesLoading, loadCompanies, companiesMonth]);
 
   useEffect(() => {
     loadDashboard();
@@ -335,7 +358,15 @@ export default function Admin() {
               </div>
             )}
             {tab === 'graficas' && (
-              <PerformanceCharts data={data} analytics={analytics} analyticsLoading={analyticsLoading} />
+              <PerformanceCharts
+                data={data}
+                analytics={analytics}
+                analyticsLoading={analyticsLoading}
+                companiesData={companiesData}
+                companiesLoading={companiesLoading}
+                companiesMonth={companiesMonth}
+                onChangeCompaniesMonth={handleChangeCompaniesMonth}
+              />
             )}
           </>
         )}

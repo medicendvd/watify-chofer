@@ -263,6 +263,62 @@ export interface SucursalSummary {
   negocios_companies: { company: string; total: number; count: number }[];
 }
 
+export interface WeeklyTrendPoint {
+  week_start:  string;
+  week_label:  string;
+  total:       number;
+  count:       number;
+  wow_pct:     number | null;
+}
+
+export interface MonthlyTrendPoint {
+  month:       string;
+  month_label: string;
+  total:       number;
+  count:       number;
+  mom_pct:     number | null;
+}
+
+export interface DriverWeek {
+  week_start: string;
+  total:      number;
+}
+
+export interface DriverTrend {
+  driver_id:   number;
+  driver_name: string;
+  weeks:       DriverWeek[];
+}
+
+export interface MethodMonth {
+  month: string;
+  total: number;
+  count: number;
+}
+
+export interface MethodTrend {
+  method:  string;
+  color:   string;
+  months:  MethodMonth[];
+}
+
+export interface DowPoint {
+  dow:       number;
+  label:     string;
+  avg_total: number;
+  max_total: number;
+  min_total: number;
+  day_count: number;
+}
+
+export interface AnalyticsData {
+  weekly_trend:  WeeklyTrendPoint[];
+  monthly_trend: MonthlyTrendPoint[];
+  drivers_trend: DriverTrend[];
+  methods_trend: MethodTrend[];
+  dow_analysis:  DowPoint[];
+}
+
 export interface DashboardData {
   date: string;
   grand_total: number;

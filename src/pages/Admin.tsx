@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import logo from '../assets/logo-watify.svg';
 import { useAuthContext } from '../store/authContext';
 import { api } from '../lib/api';
-import type { DashboardData, ActiveDriverRoute, LinkPayment, SucursalSummary } from '../types';
+import type { DashboardData, ActiveDriverRoute, LinkPayment, SucursalSummary, AnalyticsData } from '../types';
 import { Link, useSearchParams } from 'react-router-dom';
 import SummaryCards from '../components/admin/SummaryCards';
 import DriverSummary from '../components/admin/DriverSummary';
@@ -72,6 +72,19 @@ export default function Admin() {
     await loadWeekly();
   };
 
+  // Analytics (histórico para gráficas)
+  const [analytics, setAnalytics]               = useState<AnalyticsData | null>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+
+  const loadAnalytics = useCallback(async () => {
+    setAnalyticsLoading(true);
+    try {
+      setAnalytics(await api.getAnalytics() as AnalyticsData);
+    } catch { /* silencioso */ } finally {
+      setAnalyticsLoading(false);
+    }
+  }, []);
+
   // Sucursal
   const [sucursalSummary, setSucursalSummary] = useState<SucursalSummary | null>(null);
   const [sucursalLoading, setSucursalLoading] = useState(false);
@@ -128,6 +141,13 @@ export default function Admin() {
       setRoutesLoading(false);
     }
   }, []);
+
+  // Cargar analytics solo cuando el usuario abre el tab de gráficas
+  useEffect(() => {
+    if (tab === 'graficas' && !analytics && !analyticsLoading) {
+      loadAnalytics();
+    }
+  }, [tab, analytics, analyticsLoading, loadAnalytics]);
 
   useEffect(() => {
     loadDashboard();
@@ -314,7 +334,9 @@ export default function Admin() {
                 )}
               </div>
             )}
-            {tab === 'graficas' && <PerformanceCharts data={data} />}
+            {tab === 'graficas' && (
+              <PerformanceCharts data={data} analytics={analytics} analyticsLoading={analyticsLoading} />
+            )}
           </>
         )}
 

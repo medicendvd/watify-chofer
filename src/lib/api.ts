@@ -65,6 +65,9 @@ export const api = {
     return request(`/dashboard/index.php${params}`);
   },
 
+  // Analytics (tendencias históricas)
+  getAnalytics: () => request('/dashboard/analytics.php'),
+
   // Weekly summary
   getWeeklySummary: () => request('/dashboard/weekly.php'),
   confirmWeeklyDay: (chofer_id: number, date: string) =>

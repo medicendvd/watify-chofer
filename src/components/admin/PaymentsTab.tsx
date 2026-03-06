@@ -299,35 +299,37 @@ export default function PaymentsTab({ payments, onRefresh }: Props) {
         </div>
       </div>
 
-      {/* Acción Stripe */}
-      <div className="flex justify-end">
+      {/* Acción Stripe + Filtros */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex gap-2">
+          {([
+            { key: 'pendientes', label: `Pendientes (${pending.length})` },
+            { key: 'pagados',    label: `Pagados (${paid.length})` },
+            { key: 'todos',      label: 'Todos' },
+          ] as { key: Filter; label: string }[]).map(f => (
+            <button
+              key={f.key}
+              onClick={() => setFilter(f.key)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                filter === f.key
+                  ? 'text-white shadow-sm'
+                  : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50'
+              }`}
+              style={filter === f.key ? { background: '#1a2fa8' } : {}}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
         <button
           onClick={() => setStripeOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors shadow-sm"
+          className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors shadow-sm shrink-0"
         >
-          <span>⚡</span> Verificar con Stripe
+          <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+          </svg>
+          Verificar Stripe
         </button>
-      </div>
-
-      {/* Filtros */}
-      <div className="flex gap-2">
-        {([
-          { key: 'pendientes', label: `Pendientes (${pending.length})` },
-          { key: 'pagados',    label: `Pagados (${paid.length})` },
-          { key: 'todos',      label: 'Todos' },
-        ] as { key: Filter; label: string }[]).map(f => (
-          <button
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${
-              filter === f.key
-                ? 'bg-water-600 text-white'
-                : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50'
-            }`}
-          >
-            {f.label}
-          </button>
-        ))}
       </div>
 
       {/* Tabla / Lista */}

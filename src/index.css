@@ -1,10 +1,13 @@
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   body {
-    @apply bg-gray-50 text-gray-900 font-sans;
+    @apply bg-gray-50 text-gray-900;
+    font-family: 'DM Sans', sans-serif;
     margin: 0;
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
@@ -18,8 +21,40 @@
   .safe-bottom {
     padding-bottom: env(safe-area-inset-bottom);
   }
+  .font-display {
+    font-family: 'Syne', sans-serif;
+  }
 }
 
+/* Login background blobs */
+@keyframes blob {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%       { transform: translate(40px, -60px) scale(1.15); }
+  66%       { transform: translate(-30px, 30px) scale(0.9); }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.animate-blob { animation: blob 9s infinite ease-in-out; }
+.delay-2000   { animation-delay: 2s; }
+.delay-4000   { animation-delay: 4s; }
+
+.animate-fade-up { animation: fadeUp 0.55s cubic-bezier(.22,.68,0,1.2) both; }
+.delay-100 { animation-delay: .10s; }
+.delay-200 { animation-delay: .20s; }
+.delay-300 { animation-delay: .30s; }
+.delay-400 { animation-delay: .40s; }
+.delay-500 { animation-delay: .50s; }
+
+/* Shake */
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
   15%       { transform: translateX(-6px); }
@@ -33,3 +68,33 @@
 .animate-shake {
   animation: shake 0.45s ease-in-out;
 }
+
+/* Login input dark style */
+.login-input {
+  width: 100%;
+  background: rgba(255,255,255,0.06);
+  border: 1.5px solid rgba(255,255,255,0.12);
+  border-radius: 14px;
+  padding: 14px 18px;
+  color: #fff;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.login-input::placeholder {
+  color: rgba(255,255,255,0.28);
+}
+
+.login-input:focus {
+  border-color: #10ffe0;
+  background: rgba(16,255,224,0.06);
+  box-shadow: 0 0 0 3px rgba(16,255,224,0.12);
+}
+
+.login-input.error {
+  border-color: #ff6b6b;
+  box-shadow: 0 0 0 3px rgba(255,107,107,0.15);
+}
+

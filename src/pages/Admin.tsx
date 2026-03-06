@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
-import logo from '../assets/logo.png';
+import logo from '../assets/logo-watify.svg';
 import { useAuthContext } from '../store/authContext';
 import { api } from '../lib/api';
 import type { DashboardData, ActiveDriverRoute, LinkPayment, SucursalSummary } from '../types';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import SummaryCards from '../components/admin/SummaryCards';
 import DriverSummary from '../components/admin/DriverSummary';
 import PerformanceCharts from '../components/admin/PerformanceCharts';
@@ -23,12 +23,20 @@ function formatDate(d: Date) {
   return d.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' });
 }
 
+type Tab = 'resumen' | 'choferes' | 'graficas' | 'pagos' | 'sucursal';
+const VALID_TABS: Tab[] = ['choferes', 'sucursal', 'resumen', 'graficas', 'pagos'];
+
 export default function Admin() {
   const { user, logout } = useAuthContext();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [tab, setTab] = useState<'resumen' | 'choferes' | 'graficas' | 'pagos' | 'sucursal'>('choferes');
+
+  const rawTab = searchParams.get('tab') as Tab | null;
+  const tab: Tab = rawTab && VALID_TABS.includes(rawTab) ? rawTab : 'choferes';
+
+  const setTab = (t: Tab) => setSearchParams({ tab: t }, { replace: true });
 
   // Resumen semanal
   const [weekly, setWeekly] = useState<WeeklySummary | null>(null);
@@ -154,35 +162,49 @@ export default function Admin() {
     <div className="min-h-screen bg-gray-50 pb-8">
 
       {/* Header */}
-      <div className="bg-gradient-to-r from-water-400 to-water-500 px-4 pt-5 pb-5 shadow-md">
+      <div className="bg-white border-b border-gray-100 shadow-sm px-4 py-3">
         <div className="flex justify-between items-center max-w-7xl mx-auto">
-          <div>
-            <p className="capitalize text-xs mb-1" style={{ color: '#002eca' }}>{formatDate(today)}</p>
-            <img src={logo} alt="Watify" className="h-8 mix-blend-multiply" />
-            <p className="text-xs mt-0.5" style={{ color: '#002eca' }}>Hola, {user?.name}</p>
+          {/* Logo + fecha */}
+          <div className="flex items-center gap-4">
+            <img src={logo} alt="Watify" className="h-7" />
+            <div>
+              <p className="text-xs font-semibold text-gray-800 capitalize leading-tight">{formatDate(today)}</p>
+              <p className="text-xs text-gray-400">Hola, {user?.name}</p>
+            </div>
           </div>
-          <div className="flex gap-2">
+
+          {/* Acciones */}
+          <div className="flex items-center gap-2">
             <Link
               to="/live"
-              className="bg-[#1a2fa8] hover:bg-[#1626a0] text-white text-xs font-semibold py-2 px-3.5 rounded-xl transition-colors shadow-sm"
+              className="flex items-center gap-1.5 text-xs font-semibold text-white px-3 py-2 rounded-lg transition-colors"
+              style={{ background: '#1a2fa8' }}
             >
+              <svg aria-hidden="true" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+              </svg>
               En vivo
             </Link>
             <button
               onClick={() => { loadDashboard(); loadActiveRoutes(); }}
-              className="bg-[#1a2fa8] hover:bg-[#1626a0] text-white text-xs font-semibold py-2 px-3.5 rounded-xl transition-colors shadow-sm"
+              className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-lg transition-colors"
             >
+              <svg aria-hidden="true" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h5M20 20v-5h-5M4.5 15A8 8 0 0 0 19.5 9M19.5 9A8 8 0 0 0 4.5 15"/>
+              </svg>
               Actualizar
             </button>
             <button
               onClick={() => setShowProfile(true)}
-              className="bg-[#1a2fa8] hover:bg-[#1626a0] text-white text-xs font-semibold py-2 px-3.5 rounded-xl transition-colors shadow-sm"
+              aria-label="Ver perfil"
+              className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm text-white uppercase transition-colors"
+              style={{ background: '#1a2fa8' }}
             >
-              👤 Perfil
+              {user?.name[0]}
             </button>
             <button
               onClick={logout}
-              className="bg-[#1a2fa8] hover:bg-[#1626a0] text-white text-xs font-semibold py-2 px-3.5 rounded-xl transition-colors shadow-sm"
+              className="text-xs font-semibold text-gray-500 hover:text-gray-700 border border-gray-200 hover:border-gray-300 px-3 py-2 rounded-lg transition-colors"
             >
               Salir
             </button>
@@ -191,35 +213,41 @@ export default function Admin() {
       </div>
 
       {/* Tabs */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
-        <div className="flex max-w-7xl mx-auto">
+      <div className="bg-white border-b border-gray-150 sticky top-0 z-10 shadow-sm">
+        <div role="tablist" aria-label="Secciones del dashboard" className="flex max-w-7xl mx-auto px-1">
           {([
             { key: 'choferes', label: 'Choferes' },
-            { key: 'sucursal', label: '🏪 Sucursal' },
+            { key: 'sucursal', label: 'Sucursal' },
             { key: 'resumen',  label: 'Resumen' },
             { key: 'graficas', label: 'Gráficas' },
             { key: 'pagos',    label: 'Pagos' },
           ] as const).map((t) => (
             <button
               key={t.key}
+              role="tab"
+              aria-selected={tab === t.key}
               onClick={() => setTab(t.key)}
-              className={`flex-1 lg:flex-none lg:px-8 py-3.5 text-sm font-semibold border-b-2 transition-colors ${
+              className={`flex-1 lg:flex-none lg:px-6 py-3.5 text-sm font-semibold border-b-2 transition-colors transition-border ${
                 tab === t.key
-                  ? 'border-water-500 text-water-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                  ? 'border-[#1a2fa8] text-[#1a2fa8]'
+                  : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-200'
               }`}
             >
-              {t.label}
-              {t.key === 'choferes' && activeCount > 0 && (
-                <span className="ml-1.5 inline-flex items-center justify-center w-4 h-4 text-xs bg-emerald-500 text-white rounded-full">
-                  {activeCount}
-                </span>
-              )}
-              {t.key === 'pagos' && pendingLinks > 0 && (
-                <span className="ml-1.5 inline-flex items-center justify-center w-4 h-4 text-xs bg-orange-500 text-white rounded-full">
-                  {pendingLinks}
-                </span>
-              )}
+              <span className="flex items-center justify-center gap-1.5">
+                {t.label}
+                {t.key === 'choferes' && activeCount > 0 && (
+                  <span aria-label={`${activeCount} rutas activas`} className="inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold bg-emerald-500 text-white rounded-full">
+                    {activeCount}
+                    <span className="sr-only"> rutas activas</span>
+                  </span>
+                )}
+                {t.key === 'pagos' && pendingLinks > 0 && (
+                  <span aria-label={`${pendingLinks} pagos pendientes`} className="inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold bg-orange-500 text-white rounded-full">
+                    {pendingLinks}
+                    <span className="sr-only"> pagos pendientes</span>
+                  </span>
+                )}
+              </span>
             </button>
           ))}
         </div>
@@ -233,8 +261,9 @@ export default function Admin() {
 
         {/* Loading / Error para resumen y gráficas */}
         {loading && tab !== 'choferes' && (
-          <div className="flex items-center justify-center py-16">
+          <div role="status" aria-label="Cargando datos…" className="flex items-center justify-center py-16">
             <div className="animate-spin rounded-full h-10 w-10 border-4 border-water-500 border-t-transparent" />
+            <span className="sr-only">Cargando…</span>
           </div>
         )}
         {error && tab !== 'choferes' && (
@@ -248,7 +277,7 @@ export default function Admin() {
                 <SummaryCards data={data} />
                 {weekly && weekly.drivers.length > 0 && (
                   <div className="space-y-4">
-                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Corte semanal por chofer</h3>
+                    <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest">Corte semanal por chofer</h3>
                     {weekly.drivers.map((driver) => (
                       <WeeklyTable
                         key={driver.id}
@@ -266,7 +295,7 @@ export default function Admin() {
                     {user?.role === 'Admin' && (
                       <button
                         onClick={() => setShowIncidentModal(true)}
-                        className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-white border-2 border-dashed border-gray-200 rounded-2xl text-gray-400 hover:border-[#1a2fa8] hover:text-[#1a2fa8] transition-colors text-sm font-semibold"
+                        className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-white border border-dashed border-gray-300 rounded-2xl text-gray-400 hover:border-[#1a2fa8] hover:text-[#1a2fa8] hover:bg-blue-50 transition-all text-sm font-semibold"
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -307,22 +336,24 @@ export default function Admin() {
             {/* Rutas en vivo */}
             <div>
               <div className="flex justify-between items-center mb-3">
-                <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                  🛣️ Rutas de hoy
+                <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest">
+                  Rutas de hoy
                 </h2>
                 <div className="flex items-center gap-2">
                   {routesLoading && (
-                    <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-water-500 border-t-transparent" />
+                    <div role="status" aria-label="Actualizando rutas…" className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-[#1a2fa8] border-t-transparent">
+                      <span className="sr-only">Actualizando…</span>
+                    </div>
                   )}
                   <button
                     onClick={loadActiveRoutes}
                     disabled={routesLoading}
-                    className="text-xs text-water-600 hover:text-water-700 font-medium disabled:opacity-40"
+                    className="text-xs font-semibold text-[#1a2fa8] bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-lg transition-colors disabled:opacity-40"
                   >
                     Refrescar
                   </button>
                   {routesLastUpdated && !routesLoading && (
-                    <span className="text-xs text-gray-400">· {minutesLeft} min</span>
+                    <span className="text-xs text-gray-400">· Próxima actualización en {minutesLeft} min</span>
                   )}
                 </div>
               </div>
@@ -332,8 +363,8 @@ export default function Admin() {
             {/* Ventas del día por chofer */}
             {!loading && data && data.by_driver.length > 0 && (
               <div>
-                <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
-                  📊 Ventas del día (por chofer)
+                <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">
+                  Ventas del día (por chofer)
                 </h2>
                 <DriverSummary drivers={data.by_driver} />
               </div>

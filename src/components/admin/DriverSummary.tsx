@@ -21,16 +21,19 @@ export default function DriverSummary({ drivers }: Props) {
           .reduce((s, m) => s + m.total, 0);
 
         return (
-          <div key={driver.id} className="bg-white rounded-2xl shadow-sm overflow-hidden">
+          <div key={driver.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             {/* Header del chofer */}
-            <div className="flex justify-between items-center px-4 py-3 bg-gray-50 border-b border-gray-100">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-water-100 text-water-700 flex items-center justify-center font-bold text-sm uppercase">
+            <div className="flex justify-between items-center px-4 py-3 border-b border-gray-100">
+              <div className="flex items-center gap-2.5">
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm uppercase text-white"
+                  style={{ background: '#1a2fa8' }}
+                >
                   {driver.name[0]}
                 </div>
-                <span className="font-semibold text-gray-800">{driver.name}</span>
+                <span className="font-semibold text-gray-800 text-sm">{driver.name}</span>
               </div>
-              <span className="font-bold text-gray-900">
+              <span className="font-bold text-gray-900 text-sm">
                 ${Number(driver.total).toLocaleString('es-MX', { minimumFractionDigits: 0 })}
               </span>
             </div>

@@ -146,10 +146,10 @@ function CreateSaleModal({ route, onClose, onSaved }: CreateSaleModalProps) {
 
   return (
     <div className="fixed inset-0 bg-black/50 z-[9999] flex items-end sm:items-center justify-center p-4">
-      <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl flex flex-col max-h-[90vh]">
+      <div className="bg-white rounded-3xl w-full max-w-sm sm:max-w-2xl shadow-2xl flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="px-5 pt-5 pb-4 border-b border-gray-100 shrink-0">
-          <h3 className="font-bold text-gray-900 text-base">➕ Crear venta</h3>
+          <h3 className="font-bold text-gray-900 text-base">Crear venta</h3>
           <p className="text-xs text-gray-400 mt-0.5">Para {route.chofer_name}</p>
         </div>
 
@@ -162,13 +162,13 @@ function CreateSaleModal({ route, onClose, onSaved }: CreateSaleModalProps) {
             {/* Productos */}
             <div>
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Productos</p>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {products.map(p => {
                   const qty = quantities[p.id] ?? 0;
                   return (
                     <div key={p.id} className="border border-gray-200 rounded-xl p-3">
-                      <p className="text-xs font-medium text-gray-700 mb-1 truncate">{p.name}</p>
-                      <p className="text-xs text-gray-400 mb-2">${getPrice(p).toFixed(0)} c/u</p>
+                      <p className="text-sm font-semibold text-gray-700 mb-1 truncate">{p.name}</p>
+                      <p className="text-sm text-gray-400 mb-2">${getPrice(p).toFixed(0)} c/u</p>
                       <div className="flex items-center justify-between gap-2">
                         <button onClick={() => adjust(p.id, -1)} disabled={qty === 0}
                           className="w-7 h-7 rounded-full bg-gray-100 text-gray-600 font-bold disabled:opacity-30 flex items-center justify-center text-base">−</button>
@@ -185,27 +185,23 @@ function CreateSaleModal({ route, onClose, onSaved }: CreateSaleModalProps) {
             {/* Método de pago — grid 3+3 igual que app chofer */}
             <div>
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Método de pago</p>
-              <div className="space-y-2">
-                {[methods.slice(0, 3), methods.slice(3)].map((row, ri) => (
-                  <div key={ri} className="grid grid-cols-3 gap-2">
-                    {row.map(m => (
-                      <button
-                        key={m.id}
-                        onClick={() => { setMethodId(m.id); setCompanyId(null); }}
-                        className={`flex items-center gap-1.5 p-2 rounded-xl transition-all w-full border-2 bg-white ${methodId === m.id ? 'shadow-md' : 'border-transparent opacity-75'}`}
-                        style={methodId === m.id ? { borderColor: m.color } : {}}
-                      >
-                        <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                          style={{ backgroundColor: m.color + '20', color: m.color }}>
-                          <MethodIcon icon={m.icon} size={16} />
-                        </div>
-                        <span className="text-xs font-semibold leading-tight text-left"
-                          style={{ color: methodId === m.id ? m.color : '#6b7280' }}>
-                          {m.name}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                {methods.map(m => (
+                  <button
+                    key={m.id}
+                    onClick={() => { setMethodId(m.id); setCompanyId(null); }}
+                    className={`flex flex-col sm:flex-col items-center gap-1.5 p-2 rounded-xl transition-colors w-full border-2 bg-white ${methodId === m.id ? 'shadow-md' : 'border-transparent opacity-75'}`}
+                    style={methodId === m.id ? { borderColor: m.color } : {}}
+                  >
+                    <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                      style={{ backgroundColor: m.color + '20', color: m.color }}>
+                      <MethodIcon icon={m.icon} size={16} />
+                    </div>
+                    <span className="text-xs font-semibold leading-tight text-center"
+                      style={{ color: methodId === m.id ? m.color : '#000000' }}>
+                      {m.name}
+                    </span>
+                  </button>
                 ))}
               </div>
             </div>
@@ -815,13 +811,13 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
   const efectivoHoy    = route.efectivo_hoy ?? efectivo?.total ?? 0;
   const montoDelDia    = Math.max(0, efectivoHoy - montoFacturado - Math.max(0, incidencias));
 
-  const headerBg = muted ? 'bg-gray-400' : 'bg-[#1a2fa8]';
+  const headerBg = muted ? '#6b7280' : '#0f1c5e';
 
   return (
     <div className={`bg-white rounded-2xl shadow-sm overflow-hidden border ${muted ? 'border-gray-200 opacity-80' : 'border-gray-100'}`}>
 
       {/* Header del chofer */}
-      <div className={`${headerBg} text-white px-4 py-3 flex justify-between items-center`}>
+      <div className="text-white px-4 py-3 flex justify-between items-center" style={{ background: headerBg }}>
         <div className="flex items-center gap-2.5">
           <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center font-bold text-base uppercase shrink-0">
             {route.chofer_name[0]}
@@ -835,20 +831,23 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
                 </span>
               )}
             </div>
-            <p className="text-xs text-white/60">
-              {muted
-                ? `Finalizada · ${formatHour(route.started_at)} – ${route.finished_at ? formatHour(route.finished_at) : ''}`
-                : 'Ruta en curso'}
-            </p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              {!muted && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block animate-pulse" />}
+              <p className="text-xs text-white/60">
+                {muted
+                  ? `Finalizada · ${formatHour(route.started_at)} – ${route.finished_at ? formatHour(route.finished_at) : ''}`
+                  : 'Ruta en curso'}
+              </p>
+            </div>
           </div>
         </div>
         <div className="text-right">
-          <p className="text-xs text-white/60">Total ventas</p>
-          <p className="font-bold text-lg">
+          <p className="text-xs text-white/50 font-medium uppercase tracking-wide">Total</p>
+          <p className="font-bold text-xl leading-tight">
             ${Number(route.total_ventas).toLocaleString('es-MX', { minimumFractionDigits: 0 })}
           </p>
-          <p className="mt-0.5 font-bold" style={{ fontSize: '18px', color: '#41ffac' }}>
-            👤 {route.transaction_count} venta{route.transaction_count !== 1 ? 's' : ''}
+          <p className="text-xs mt-0.5 font-semibold" style={{ color: '#10ffe0' }}>
+            {route.transaction_count} venta{route.transaction_count !== 1 ? 's' : ''}
           </p>
         </div>
       </div>
@@ -856,9 +855,9 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
       <div className="p-4 space-y-3">
 
         {/* Garrafones — sección destacada */}
-        <div className={`rounded-2xl p-4 border-2 ${muted ? 'bg-gray-50 border-gray-200' : 'bg-water-50 border-water-300'}`}>
-          <p className={`text-xs font-semibold uppercase tracking-wide mb-3 ${muted ? 'text-gray-500' : 'text-water-700'}`}>
-            🫙 Garrafones
+        <div className={`rounded-2xl p-4 border ${muted ? 'bg-gray-50 border-gray-200' : 'border-gray-100'}`} style={!muted ? { background: '#f0fdf9' } : {}}>
+          <p className={`text-xs font-bold uppercase tracking-widest mb-3 ${muted ? 'text-gray-500' : 'text-emerald-700'}`}>
+            Garrafones
           </p>
           <div className="grid grid-cols-3 gap-2 text-center mb-3">
             {/* Tile Cargados — editable por admin */}
@@ -948,9 +947,9 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
 
         {/* Productos vendidos */}
         {route.products.length > 0 && (
-          <div className="bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide px-3 pt-3 pb-2">
-              📦 Productos vendidos
+          <div className="bg-gray-50 rounded-xl border border-gray-100 overflow-hidden">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest px-3 pt-3 pb-2">
+              Productos vendidos
             </p>
             <div className="divide-y divide-gray-100">
               {route.products.map(p => (
@@ -1080,9 +1079,13 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
             {/* Botón Facturar */}
             <button
               onClick={() => setFacturarOpen(true)}
-              className="w-full py-2 rounded-lg text-xs font-medium text-gray-500 border border-gray-200 bg-white hover:bg-gray-50 hover:text-gray-700 transition-colors"
+              className="w-full py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
+              style={{ background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a' }}
             >
-              🧾 Facturar garrafones
+              <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              </svg>
+              Facturar garrafones
             </button>
           </div>
         )}
@@ -1107,24 +1110,30 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
           />
         )}
 
-        {/* Botón enviar carga extra — solo rutas activas */}
+        {/* Botones de acción — solo rutas activas */}
         {!muted && (
-          <button
-            onClick={() => setSendLoadOpen(true)}
-            className="w-full py-2.5 rounded-xl text-sm font-semibold border-2 border-amber-400 text-amber-600 hover:bg-amber-50 transition-colors flex items-center justify-center gap-1.5"
-          >
-            🎰 Enviar carga extra
-          </button>
-        )}
-
-        {/* Botón crear venta — solo rutas activas */}
-        {!muted && (
-          <button
-            onClick={() => setCreateSaleOpen(true)}
-            className="w-full py-2.5 rounded-xl text-sm font-semibold border-2 border-[#1a2fa8] text-[#1a2fa8] hover:bg-[#1a2fa8] hover:text-white transition-colors flex items-center justify-center gap-1.5"
-          >
-            ➕ Crear venta
-          </button>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => setSendLoadOpen(true)}
+              className="py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-1.5 transition-colors border border-amber-200 hover:border-amber-400"
+              style={{ background: '#fffbeb', color: '#b45309' }}
+            >
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/>
+              </svg>
+              Carga extra
+            </button>
+            <button
+              onClick={() => setCreateSaleOpen(true)}
+              className="py-2.5 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-1.5 transition-colors hover:opacity-90"
+              style={{ background: '#1a2fa8' }}
+            >
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/>
+              </svg>
+              Crear venta
+            </button>
+          </div>
         )}
 
         {/* Modal crear venta */}
@@ -1172,9 +1181,12 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
         {!muted && (
           <button
             onClick={() => setFinishConfirm(true)}
-            className="w-full py-2.5 rounded-xl text-sm font-semibold border-2 border-red-200 text-red-400 hover:bg-red-50 hover:border-red-400 hover:text-red-600 transition-colors flex items-center justify-center gap-1.5"
+            className="w-full py-2 rounded-xl text-xs font-semibold border border-red-200 text-red-400 hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition-colors flex items-center justify-center gap-1.5"
           >
-            🏁 Finalizar ruta del chofer
+            <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+            Finalizar ruta del chofer
           </button>
         )}
 
@@ -1468,10 +1480,15 @@ export default function ActiveRoutes({ routes, lastUpdated, onRefresh }: Props) 
 
   if (routes.length === 0) {
     return (
-      <div className="text-center text-gray-400 py-10 text-sm bg-white rounded-2xl">
-        <div className="text-4xl mb-3">🛣️</div>
-        <p className="font-medium text-gray-500">Sin rutas activas en este momento</p>
-        <p className="text-xs mt-1">Los choferes aparecerán aquí cuando inicien su ruta</p>
+      <div className="text-center py-10 bg-white rounded-2xl border border-gray-100">
+        <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">
+          <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="#9ca3af" strokeWidth={1.8}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+        </div>
+        <p className="font-semibold text-gray-500 text-sm">Sin rutas activas</p>
+        <p className="text-xs text-gray-400 mt-1">Los choferes aparecerán aquí cuando inicien su ruta</p>
       </div>
     );
   }
@@ -1481,20 +1498,18 @@ export default function ActiveRoutes({ routes, lastUpdated, onRefresh }: Props) 
 
       {/* Rutas activas */}
       {active.length > 0 && (
-        <div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {active.map(route => (
-              <RouteCard key={route.route_id} route={route} routeNumber={routeNumById.get(route.route_id) ?? 1} onRefresh={onRefresh} />
-            ))}
-          </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {active.map(route => (
+            <RouteCard key={route.route_id} route={route} routeNumber={routeNumById.get(route.route_id) ?? 1} onRefresh={onRefresh} />
+          ))}
         </div>
       )}
 
       {/* Rutas finalizadas hoy */}
       {finished.length > 0 && (
         <div>
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">
-            ✅ Rutas finalizadas hoy
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
+            Rutas finalizadas hoy
           </p>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {finished.map(route => (
@@ -1506,7 +1521,7 @@ export default function ActiveRoutes({ routes, lastUpdated, onRefresh }: Props) 
 
       {lastUpdated && (
         <p className="text-center text-xs text-gray-400 pb-2">
-          Actualizado a las {formatTime(lastUpdated)} · se refresca cada 10 min
+          Actualizado a las {formatTime(lastUpdated)} · refresca cada 10 min
         </p>
       )}
     </div>

@@ -187,10 +187,19 @@ export default function SucursalPOS({ onSaleComplete }: Props) {
                                   className="rounded-full bg-gray-200 text-gray-600 font-bold flex items-center justify-center hover:bg-gray-300 active:scale-95 transition-all flex-none"
                                   style={{ width: 44, height: 44, fontSize: 24 }}
                                 >−</button>
-                                <span className="font-bold text-center select-none"
-                                  style={{ fontSize: 28, minWidth: 28, color: qty === 0 ? '#d1d5db' : '#1f2937' }}>
-                                  {qty}
-                                </span>
+                                <input
+                                  type="number"
+                                  inputMode="numeric"
+                                  min={0}
+                                  value={qty === 0 ? '' : qty}
+                                  placeholder="0"
+                                  onChange={e => {
+                                    const val = Math.max(0, parseInt(e.target.value) || 0);
+                                    setQuantities(prev => val === 0 ? (({ [p.id]: _, ...rest }) => rest)(prev) : { ...prev, [p.id]: val });
+                                  }}
+                                  className="font-bold text-center bg-transparent focus:outline-none w-10"
+                                  style={{ fontSize: 28, color: qty === 0 ? '#d1d5db' : '#1f2937' }}
+                                />
                                 <button
                                   onClick={() => changeQty(p.id, 1)}
                                   className="rounded-full text-white font-bold flex items-center justify-center active:scale-95 transition-all flex-none"
@@ -230,10 +239,19 @@ export default function SucursalPOS({ onSaleComplete }: Props) {
                                     className="rounded-full bg-gray-200 text-gray-600 font-bold flex items-center justify-center hover:bg-gray-300 active:scale-95 transition-all flex-none"
                                     style={{ width: 30, height: 30, fontSize: 18 }}
                                   >−</button>
-                                  <span className="font-bold text-center select-none"
-                                    style={{ fontSize: 18, minWidth: 18, color: qty === 0 ? '#d1d5db' : '#1f2937' }}>
-                                    {qty}
-                                  </span>
+                                  <input
+                                    type="number"
+                                    inputMode="numeric"
+                                    min={0}
+                                    value={qty === 0 ? '' : qty}
+                                    placeholder="0"
+                                    onChange={e => {
+                                      const val = Math.max(0, parseInt(e.target.value) || 0);
+                                      setQuantities(prev => val === 0 ? (({ [p.id]: _, ...rest }) => rest)(prev) : { ...prev, [p.id]: val });
+                                    }}
+                                    className="font-bold text-center bg-transparent focus:outline-none w-8"
+                                    style={{ fontSize: 18, color: qty === 0 ? '#d1d5db' : '#1f2937' }}
+                                  />
                                   <button
                                     onClick={() => changeQty(p.id, 1)}
                                     className="rounded-full text-white font-bold flex items-center justify-center active:scale-95 transition-all flex-none"

@@ -15,6 +15,7 @@ import IncidentModal from '../components/admin/IncidentModal';
 import SucursalPOS from '../components/admin/SucursalPOS';
 import SucursalSummaryTab from '../components/admin/SucursalSummaryTab';
 import ProfileModal from '../components/shared/ProfileModal';
+import DatePickerButton from '../components/admin/DatePickerButton';
 import type { WeeklySummary } from '../types';
 
 const REFRESH_INTERVAL_MS = 10 * 60 * 1000; // 10 minutos
@@ -136,18 +137,26 @@ export default function Admin() {
   const [nextRefreshIn, setNextRefreshIn] = useState(REFRESH_INTERVAL_MS);
 
   const today = new Date();
+  const todayYMD = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
-  const loadDashboard = async () => {
+  const [selectedDate, setSelectedDate] = useState(todayYMD);
+
+  const loadDashboard = async (date?: string) => {
     setLoading(true);
     setError('');
     try {
-      const d = await api.getDashboard() as DashboardData;
+      const d = await api.getDashboard(date) as DashboardData;
       setData(d);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Error al cargar datos');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDateChange = (date: string) => {
+    setSelectedDate(date);
+    loadDashboard(date);
   };
 
   const loadActiveRoutes = useCallback(async () => {
@@ -413,15 +422,21 @@ export default function Admin() {
               <ActiveRoutes routes={activeRoutes} lastUpdated={routesLastUpdated} onRefresh={loadActiveRoutes} />
             </div>
 
-            {/* Ventas del día por chofer */}
-            {!loading && data && data.by_driver.length > 0 && (
-              <div>
-                <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">
-                  Ventas del día (por chofer)
+            {/* Ventas por chofer con filtro de fecha */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest">
+                  Ventas por chofer
                 </h2>
-                <DriverSummary drivers={data.by_driver} />
+                <DatePickerButton value={selectedDate} onChange={handleDateChange} />
               </div>
-            )}
+              {loading
+                ? <div className="flex justify-center py-8"><div className="animate-spin rounded-full h-7 w-7 border-4 border-[#1a2fa8] border-t-transparent" /></div>
+                : data && data.by_driver.length > 0
+                  ? <DriverSummary drivers={data.by_driver} />
+                  : <div className="text-center text-gray-400 py-6 text-sm bg-white rounded-2xl">Sin actividad de choferes este día</div>
+              }
+            </div>
           </div>
         )}
       </div>

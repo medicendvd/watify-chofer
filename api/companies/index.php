@@ -37,6 +37,20 @@ if ($method === 'GET') {
         $priceMap[$p['company_id']][$p['product_id']] = (float)$p['price'];
     }
 
+    // Expandir precios a productos sucursal que referencian un producto base
+    $refs = $pdo->query(
+        'SELECT id, ref_product_id FROM products WHERE ref_product_id IS NOT NULL'
+    )->fetchAll();
+    foreach ($priceMap as $companyId => $productPrices) {
+        foreach ($refs as $ref) {
+            $baseId    = (int)$ref['ref_product_id'];
+            $sucursalId = (int)$ref['id'];
+            if (isset($productPrices[$baseId]) && !isset($priceMap[$companyId][$sucursalId])) {
+                $priceMap[$companyId][$sucursalId] = $productPrices[$baseId];
+            }
+        }
+    }
+
     // Añadir is_zone y zone_priority a cada empresa
     foreach ($companies as &$c) {
         $cid = (int)$c['id'];

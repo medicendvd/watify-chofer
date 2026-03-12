@@ -62,9 +62,18 @@ export default function SucursalPOS({ onSaleComplete }: Props) {
     });
   };
 
+  const selectedCompany = companies.find(c => c.id === selectedCompanyId) ?? null;
+
+  const getPrice = (p: SucursalProduct) => {
+    if (selectedCompany && selectedCompany.special_prices[p.id] !== undefined) {
+      return Number(selectedCompany.special_prices[p.id]);
+    }
+    return p.base_price;
+  };
+
   const total = products.reduce((sum, p) => {
     const qty = quantities[p.id] ?? 0;
-    return sum + qty * p.base_price;
+    return sum + qty * getPrice(p);
   }, 0);
 
   const resetForm = () => {
@@ -79,7 +88,7 @@ export default function SucursalPOS({ onSaleComplete }: Props) {
     if (!routeId) { setError('Ruta no inicializada'); return; }
     const items = products
       .filter(p => (quantities[p.id] ?? 0) > 0)
-      .map(p => ({ product_id: p.id, quantity: quantities[p.id], unit_price: p.base_price }));
+      .map(p => ({ product_id: p.id, quantity: quantities[p.id], unit_price: getPrice(p) }));
     if (items.length === 0) { setError('Agrega al menos un producto'); return; }
     if (paymentMethodId === 3 && !selectedCompanyId) { setError('Selecciona una empresa'); return; }
 
@@ -170,7 +179,7 @@ export default function SucursalPOS({ onSaleComplete }: Props) {
                             >
                               <div>
                                 <p className="font-bold text-gray-800 text-xl leading-tight">{p.name}</p>
-                                <p className="text-gray-400 text-sm mt-1">${p.base_price.toFixed(0)}</p>
+                                <p className="text-gray-400 text-sm mt-1">${getPrice(p).toFixed(0)}</p>
                               </div>
                               <div className="flex items-center justify-between mt-4">
                                 <button
@@ -213,7 +222,7 @@ export default function SucursalPOS({ onSaleComplete }: Props) {
                               >
                                 <div>
                                   <p className="font-semibold text-gray-700 text-xs leading-tight truncate">{p.name}</p>
-                                  <p className="text-gray-400 text-[11px] mt-0.5">${p.base_price.toFixed(0)}</p>
+                                  <p className="text-gray-400 text-[11px] mt-0.5">${getPrice(p).toFixed(0)}</p>
                                 </div>
                                 <div className="flex items-center justify-between mt-3">
                                   <button

@@ -63,7 +63,7 @@ export default function ProductCard({ product, unitPrice }: Props) {
           <button
             onClick={() => removeItem(product.id)}
             disabled={quantity === 0}
-            className="w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 disabled:opacity-30 flex items-center justify-center text-xl font-bold transition-colors"
+            className="w-14 h-14 rounded-full bg-white/20 hover:bg-white/30 disabled:opacity-30 flex items-center justify-center text-2xl font-bold transition-colors shadow-[0_4px_10px_rgba(0,0,0,0.4)]"
           >
             −
           </button>
@@ -76,7 +76,7 @@ export default function ProductCard({ product, unitPrice }: Props) {
           </button>
           <button
             onClick={() => addItem(product, price)}
-            className="w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-xl font-bold transition-colors"
+            className="w-14 h-14 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-2xl font-bold transition-colors shadow-[0_4px_10px_rgba(0,0,0,0.4)]"
           >
             +
           </button>

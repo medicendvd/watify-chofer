@@ -141,7 +141,7 @@ export default function Chofer() {
     if (['Negocios a crédito', 'Distribuidores', 'Transferencia'].includes(selectedMethod.name) && !selectedCompany) {
       setError('Selecciona la empresa'); return;
     }
-    if ((selectedMethod.name === 'Link' || selectedMethod.name === 'Tarjeta' || branchQ) && !customerName.trim()) {
+    if ((selectedMethod.name === 'Efectivo' || selectedMethod.name === 'Link' || selectedMethod.name === 'Tarjeta' || branchQ) && !customerName.trim()) {
       setCustomerNameError(true);
       customerNameRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       setTimeout(() => setCustomerNameError(false), 500);
@@ -223,7 +223,7 @@ export default function Chofer() {
         <div ref={customerNameRef}>
           <label className={`block text-xs font-semibold uppercase tracking-wide mb-1.5 ${customerNameError && !branchQ ? 'text-red-500' : 'text-gray-500'}`}>
             Nombre del cliente
-            {(selectedMethod.name === 'Link' || selectedMethod.name === 'Tarjeta') && (
+            {(selectedMethod.name === 'Efectivo' || selectedMethod.name === 'Link' || selectedMethod.name === 'Tarjeta') && (
               <span className="ml-1 text-red-400">*</span>
             )}
           </label>
@@ -232,7 +232,7 @@ export default function Chofer() {
             value={branchQ ? '' : customerName}
             onChange={e => { if (!branchQ) { setCustomerName(e.target.value); setCustomerNameError(false); } }}
             readOnly={!!branchQ}
-            placeholder={selectedMethod.name === 'Link' || selectedMethod.name === 'Tarjeta' ? 'Requerido' : 'Opcional'}
+            placeholder={selectedMethod.name === 'Efectivo' || selectedMethod.name === 'Link' || selectedMethod.name === 'Tarjeta' ? 'Requerido' : 'Opcional'}
             className={`w-full px-4 py-3 border rounded-xl text-gray-800 bg-white focus:outline-none text-sm transition-colors ${
               customerNameError && !branchQ
                 ? 'border-red-400 ring-2 ring-red-300 animate-shake'

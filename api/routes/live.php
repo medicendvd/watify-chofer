@@ -56,6 +56,20 @@ foreach ($routes as $route) {
     $companyStmt->execute([$routeId]);
     $companies = $companyStmt->fetchAll();
 
+    // Ventas con Efectivo (método 1): nombre cliente + garrafones
+    $efectivoStmt = $pdo->prepare("
+        SELECT t.customer_name,
+               COALESCE(SUM(CASE WHEN p.name IN ('Recarga','Nuevo') THEN ti.quantity ELSE 0 END), 0) AS garrafones
+        FROM transactions t
+        LEFT JOIN transaction_items ti ON ti.transaction_id = t.id
+        LEFT JOIN products p ON p.id = ti.product_id
+        WHERE t.route_id = ? AND t.payment_method_id = 1
+        GROUP BY t.id
+        ORDER BY t.id
+    ");
+    $efectivoStmt->execute([$routeId]);
+    $efectivoSales = $efectivoStmt->fetchAll();
+
     // Ventas con Link (método 4): nombre cliente + garrafones
     $linkStmt = $pdo->prepare("
         SELECT t.customer_name,
@@ -129,6 +143,10 @@ foreach ($routes as $route) {
             'company'    => $c['company'],
             'garrafones' => (int)$c['garrafones'],
         ], $companies),
+        'efectivo_sales'   => array_map(fn($t) => [
+            'customer_name' => $t['customer_name'],
+            'garrafones'    => (int)$t['garrafones'],
+        ], $efectivoSales),
         'link_sales'       => array_map(fn($t) => [
             'customer_name' => $t['customer_name'],
             'garrafones'    => (int)$t['garrafones'],

@@ -170,6 +170,7 @@ export interface LiveRoute {
   transaction_count: number;
   garrafones: GarrafonStats;
   companies: { company: string; garrafones: number }[];
+  efectivo_sales: LiveSaleDetail[];
   link_sales: LiveSaleDetail[];
   tarjeta_sales: LiveSaleDetail[];
 }

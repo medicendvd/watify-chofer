@@ -83,6 +83,23 @@ export default function LiveDriverCard({ route, routeNumber }: Props) {
           </div>
         </div>
 
+        {/* Efectivo */}
+        {route.efectivo_sales.length > 0 && (
+          <div className="bg-gray-800 rounded-xl overflow-hidden">
+            <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wide px-3 pt-2 pb-1">
+              💵 Efectivo
+            </p>
+            <div className="divide-y divide-gray-700">
+              {route.efectivo_sales.map((s, i) => (
+                <div key={i} className="flex justify-between items-center px-3 py-1">
+                  <span className="text-xs text-gray-300">{s.customer_name || '—'}</span>
+                  <span className="text-xs font-bold text-white">{s.garrafones} garrafón{s.garrafones !== 1 ? 'es' : ''}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Empresas */}
         {route.companies.length > 0 && (
           <div className="bg-gray-800 rounded-xl overflow-hidden">

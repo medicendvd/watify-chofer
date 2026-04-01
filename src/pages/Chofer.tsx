@@ -141,7 +141,14 @@ export default function Chofer() {
     if (['Negocios a crédito', 'Distribuidores', 'Transferencia'].includes(selectedMethod.name) && !selectedCompany) {
       setError('Selecciona la empresa'); return;
     }
-    if ((selectedMethod.name === 'Efectivo' || selectedMethod.name === 'Link' || selectedMethod.name === 'Tarjeta' || branchQ) && !customerName.trim()) {
+    const needsName = selectedMethod.name === 'Efectivo' || selectedMethod.name === 'Link' || selectedMethod.name === 'Tarjeta';
+    if (needsName && (customerName.match(/[a-záéíóúüñA-ZÁÉÍÓÚÜÑ]/g) ?? []).length < 3) {
+      setCustomerNameError(true);
+      customerNameRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(() => setCustomerNameError(false), 500);
+      return;
+    }
+    if (branchQ && !customerName.trim()) {
       setCustomerNameError(true);
       customerNameRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       setTimeout(() => setCustomerNameError(false), 500);
@@ -241,7 +248,7 @@ export default function Chofer() {
           />
           {customerNameError && !branchQ && (
             <p className="text-xs text-red-500 mt-1.5 font-medium">
-              Se necesita llenar el nombre del cliente
+              Es forzoso poner el nombre real del cliente (mín. 3 letras, sin puntos ni números)
             </p>
           )}
         </div>

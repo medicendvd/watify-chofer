@@ -15,6 +15,20 @@ interface Props {
   companiesLoading: boolean;
   companiesMonth:   string;
   onChangeCompaniesMonth: (m: string) => void;
+  analyticsMonth:         string;
+  onChangeAnalyticsMonth: (m: string) => void;
+}
+
+function getMonthOptions(n = 12) {
+  const opts: { value: string; label: string }[] = [];
+  const NAMES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const now = new Date();
+  for (let i = 1; i <= n; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const val = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    opts.push({ value: val, label: `${NAMES[d.getMonth()]} ${d.getFullYear()}` });
+  }
+  return opts;
 }
 
 const NAVY  = '#0f1c5e';
@@ -87,8 +101,15 @@ function LoadingSkeleton() {
 
 type ChartTab = 'tendencia' | 'choferes' | 'metodos' | 'patrones' | 'empresas';
 
-export default function PerformanceCharts({ data, analytics, analyticsLoading, companiesData, companiesLoading, companiesMonth, onChangeCompaniesMonth }: Props) {
+export default function PerformanceCharts({ data, analytics, analyticsLoading, companiesData, companiesLoading, companiesMonth, onChangeCompaniesMonth, analyticsMonth, onChangeAnalyticsMonth }: Props) {
   const [activeTab, setActiveTab] = useState<ChartTab>('tendencia');
+
+  const monthOptions    = getMonthOptions(12);
+  const isFiltered      = !!analyticsMonth;
+  const selectedLabel   = isFiltered
+    ? (monthOptions.find(o => o.value === analyticsMonth)?.label ?? analyticsMonth)
+    : null;
+  const monthSummary    = analytics?.month_summary;
 
   // ── Datos de hoy ────────────────────────────────────────────────────────────
   const totalSales   = data.by_method.reduce((s, m) => s + m.count, 0);
@@ -163,42 +184,116 @@ export default function PerformanceCharts({ data, analytics, analyticsLoading, c
   return (
     <div className="space-y-5 pb-4">
 
-      {/* ── KPI strip ──────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="rounded-2xl p-4 shadow-sm col-span-2 lg:col-span-1" style={{ background: NAVY }}>
-          <p className="text-[10px] font-bold uppercase tracking-widest mb-1.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
-            Total hoy
-          </p>
-          <p className="text-3xl font-black text-white leading-none">{fmt(data.grand_total)}</p>
-          <p className="text-[11px] mt-1.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
-            {totalSales} venta{totalSales !== 1 ? 's' : ''}
-          </p>
+      {/* ── Selector de mes ────────────────────────────────────────────────── */}
+      <div className="flex items-center justify-between bg-white rounded-2xl px-4 py-3 shadow-sm border border-gray-100">
+        <div className="flex items-center gap-2">
+          {isFiltered ? (
+            <>
+              <span className="w-2 h-2 rounded-full bg-[#0f1c5e]" />
+              <span className="text-xs font-bold text-[#0f1c5e]">Viendo {selectedLabel}</span>
+              <button
+                onClick={() => onChangeAnalyticsMonth('')}
+                className="text-xs text-gray-400 hover:text-gray-600 ml-1 border border-gray-200 rounded-md px-2 py-0.5 hover:border-gray-300 transition-colors"
+              >
+                Limpiar
+              </button>
+            </>
+          ) : (
+            <span className="text-xs text-gray-400">Mostrando mes actual</span>
+          )}
         </div>
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5">Esta semana</p>
-          <p className="text-xl font-black text-gray-900 leading-none">{fmt(thisWeek)}</p>
-          <div className="flex items-center gap-1.5 mt-1.5">
-            <GrowthBadge pct={wowWeekPct} />
-            <span className="text-[10px] text-gray-400">vs sem. ant.</span>
-          </div>
-        </div>
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5">Este mes</p>
-          <p className="text-xl font-black text-gray-900 leading-none">{fmt(data.mom.this_month)}</p>
-          <div className="flex items-center gap-1.5 mt-1.5">
-            <GrowthBadge pct={data.mom.pct} />
-            <span className="text-[10px] text-gray-400">vs mes ant.</span>
-          </div>
-        </div>
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5">Mes anterior</p>
-          <p className="text-xl font-black text-gray-900 leading-none">{fmt(prevMonth)}</p>
-          <div className="flex items-center gap-1.5 mt-1.5">
-            <GrowthBadge pct={momPct !== null ? -momPct : null} />
-            <span className="text-[10px] text-gray-400">vs actual</span>
-          </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-400 hidden sm:inline">Filtrar por mes:</span>
+          <select
+            value={analyticsMonth}
+            onChange={e => onChangeAnalyticsMonth(e.target.value)}
+            className="text-xs font-semibold border border-gray-200 rounded-lg px-2.5 py-1.5 text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-200 bg-white"
+          >
+            <option value="">Mes actual</option>
+            {monthOptions.map(o => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
         </div>
       </div>
+
+      {/* ── KPI strip ──────────────────────────────────────────────────────── */}
+      {isFiltered && monthSummary ? (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="rounded-2xl p-4 shadow-sm col-span-2 lg:col-span-1" style={{ background: NAVY }}>
+            <p className="text-[10px] font-bold uppercase tracking-widest mb-1.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
+              {selectedLabel}
+            </p>
+            <p className="text-3xl font-black text-white leading-none">{fmt(monthSummary.total)}</p>
+            <p className="text-[11px] mt-1.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
+              {monthSummary.count} venta{monthSummary.count !== 1 ? 's' : ''}
+            </p>
+          </div>
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5">Promedio diario</p>
+            <p className="text-xl font-black text-gray-900 leading-none">
+              {monthlyTrend.length > 0 ? fmt(Math.round(monthSummary.total / monthlyTrend.length)) : '—'}
+            </p>
+            <p className="text-[10px] text-gray-400 mt-1.5">{monthlyTrend.length} días con ventas</p>
+          </div>
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5">Crecimiento</p>
+            <p className={`text-xl font-black leading-none ${
+              monthSummary.mom_pct === null ? 'text-gray-400' :
+              monthSummary.mom_pct >= 0    ? 'text-green-600' : 'text-red-500'
+            }`}>
+              {monthSummary.mom_pct === null
+                ? '—'
+                : `${monthSummary.mom_pct >= 0 ? '+' : ''}${monthSummary.mom_pct}%`}
+            </p>
+            <p className="text-[10px] text-gray-400 mt-1.5">vs mes anterior</p>
+          </div>
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5">Mes anterior</p>
+            <p className="text-xl font-black text-gray-900 leading-none">{fmt(monthSummary.prev_total)}</p>
+            <div className="flex items-center gap-1.5 mt-1.5">
+              <GrowthBadge pct={monthSummary.mom_pct !== null ? -monthSummary.mom_pct : null} />
+              <span className="text-[10px] text-gray-400">vs actual</span>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="rounded-2xl p-4 shadow-sm col-span-2 lg:col-span-1" style={{ background: NAVY }}>
+            <p className="text-[10px] font-bold uppercase tracking-widest mb-1.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
+              Total hoy
+            </p>
+            <p className="text-3xl font-black text-white leading-none">{fmt(data.grand_total)}</p>
+            <p className="text-[11px] mt-1.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
+              {totalSales} venta{totalSales !== 1 ? 's' : ''}
+            </p>
+          </div>
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5">Esta semana</p>
+            <p className="text-xl font-black text-gray-900 leading-none">{fmt(thisWeek)}</p>
+            <div className="flex items-center gap-1.5 mt-1.5">
+              <GrowthBadge pct={wowWeekPct} />
+              <span className="text-[10px] text-gray-400">vs sem. ant.</span>
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5">Este mes</p>
+            <p className="text-xl font-black text-gray-900 leading-none">{fmt(data.mom.this_month)}</p>
+            <div className="flex items-center gap-1.5 mt-1.5">
+              <GrowthBadge pct={data.mom.pct} />
+              <span className="text-[10px] text-gray-400">vs mes ant.</span>
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5">Mes anterior</p>
+            <p className="text-xl font-black text-gray-900 leading-none">{fmt(prevMonth)}</p>
+            <div className="flex items-center gap-1.5 mt-1.5">
+              <GrowthBadge pct={momPct !== null ? -momPct : null} />
+              <span className="text-[10px] text-gray-400">vs actual</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Sub-tabs ───────────────────────────────────────────────────────── */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -224,14 +319,14 @@ export default function PerformanceCharts({ data, analytics, analyticsLoading, c
           {activeTab === 'tendencia' && (
             <div className="space-y-8">
 
-              {/* Monthly MoM */}
+              {/* Monthly MoM / Daily when filtered */}
               <div>
                 <SectionTitle>
                   <span className="w-2 h-5 rounded-sm inline-block" style={{ background: MINT }} />
-                  Ingresos mensuales
+                  {isFiltered ? `Ingresos diarios — ${selectedLabel}` : 'Ingresos mensuales'}
                   {monthlyTrend.length > 0 && (
                     <span className="ml-auto text-[10px] font-normal text-gray-400">
-                      últimos {monthlyTrend.length} meses
+                      {isFiltered ? `${monthlyTrend.length} días` : `últimos ${monthlyTrend.length} meses`}
                     </span>
                   )}
                 </SectionTitle>
@@ -275,10 +370,10 @@ export default function PerformanceCharts({ data, analytics, analyticsLoading, c
               <div>
                 <SectionTitle>
                   <span className="w-2 h-5 rounded-sm inline-block" style={{ background: NAVY }} />
-                  Tendencia semanal (WoW)
+                  {isFiltered ? `Semanas de ${selectedLabel}` : 'Tendencia semanal (WoW)'}
                   {weeklyTrend.length > 0 && (
                     <span className="ml-auto text-[10px] font-normal text-gray-400">
-                      últimas {weeklyTrend.length} semanas
+                      {isFiltered ? `${weeklyTrend.length} semanas` : `últimas ${weeklyTrend.length} semanas`}
                     </span>
                   )}
                 </SectionTitle>
@@ -304,8 +399,8 @@ export default function PerformanceCharts({ data, analytics, analyticsLoading, c
           {activeTab === 'choferes' && (
             <div className="space-y-8">
 
-              {/* Hoy por chofer */}
-              <div>
+              {/* Hoy por chofer — solo cuando no hay filtro de mes */}
+              {!isFiltered && <div>
                 <SectionTitle>
                   <span className="w-2 h-5 rounded-sm inline-block" style={{ background: NAVY }} />
                   Ventas de hoy por chofer
@@ -340,14 +435,16 @@ export default function PerformanceCharts({ data, analytics, analyticsLoading, c
                 ) : (
                   <p className="text-sm text-gray-400 text-center py-6">Sin ventas hoy</p>
                 )}
-              </div>
+              </div>}
 
               {/* Histórico semanal por chofer */}
               <div>
                 <SectionTitle>
                   <span className="w-2 h-5 rounded-sm inline-block" style={{ background: '#6366f1' }} />
-                  Comparativa semanal de choferes
-                  <span className="ml-auto text-[10px] font-normal text-gray-400">últimas 6 semanas</span>
+                  {isFiltered ? `Choferes — ${selectedLabel}` : 'Comparativa semanal de choferes'}
+                  <span className="ml-auto text-[10px] font-normal text-gray-400">
+                    {isFiltered ? `${driverWeeklyPivot.length} semanas` : 'últimas 6 semanas'}
+                  </span>
                 </SectionTitle>
                 {analyticsLoading ? <LoadingSkeleton /> : driverWeeklyPivot.length > 0 && driversTrend.length > 0 ? (
                   <>
@@ -416,8 +513,8 @@ export default function PerformanceCharts({ data, analytics, analyticsLoading, c
           {activeTab === 'metodos' && (
             <div className="space-y-8">
 
-              {/* Hoy — donut + barras */}
-              <div>
+              {/* Hoy — donut + barras (solo sin filtro de mes) */}
+              {!isFiltered && <div>
                 <SectionTitle>
                   <span className="w-2 h-5 rounded-sm inline-block" style={{ background: MINT }} />
                   Mix de pago hoy
@@ -459,13 +556,13 @@ export default function PerformanceCharts({ data, analytics, analyticsLoading, c
                     })}
                   </div>
                 </div>
-              </div>
+              </div>}
 
               {/* Evolución de métodos por mes */}
               <div>
                 <SectionTitle>
                   <span className="w-2 h-5 rounded-sm inline-block" style={{ background: '#6366f1' }} />
-                  Evolución de métodos — últimos 6 meses
+                  {isFiltered ? `Métodos de pago — ${selectedLabel}` : 'Evolución de métodos — últimos 6 meses'}
                 </SectionTitle>
                 {analyticsLoading ? <LoadingSkeleton /> : methodAreaPivot.length > 0 && methodsTrend.length > 0 ? (
                   <ResponsiveContainer width="100%" height={280}>
@@ -506,7 +603,9 @@ export default function PerformanceCharts({ data, analytics, analyticsLoading, c
                 <SectionTitle>
                   <span className="w-2 h-5 rounded-sm inline-block" style={{ background: '#f97316' }} />
                   Promedio por día de la semana
-                  <span className="ml-auto text-[10px] font-normal text-gray-400">últimos 90 días</span>
+                  <span className="ml-auto text-[10px] font-normal text-gray-400">
+                    {isFiltered ? selectedLabel : 'últimos 90 días'}
+                  </span>
                 </SectionTitle>
                 {analyticsLoading ? <LoadingSkeleton /> : dowAnalysis.length > 0 ? (
                   <>
@@ -574,8 +673,8 @@ export default function PerformanceCharts({ data, analytics, analyticsLoading, c
                 )}
               </div>
 
-              {/* Productos hoy */}
-              <div>
+              {/* Productos hoy — solo sin filtro de mes */}
+              {!isFiltered && <div>
                 <SectionTitle>
                   <span className="w-2 h-5 rounded-sm inline-block" style={{ background: MINT }} />
                   Desglose de productos hoy
@@ -608,7 +707,7 @@ export default function PerformanceCharts({ data, analytics, analyticsLoading, c
                 ) : (
                   <p className="text-sm text-gray-400 text-center py-6">Sin ventas hoy</p>
                 )}
-              </div>
+              </div>}
             </div>
           )}
 

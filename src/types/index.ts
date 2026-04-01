@@ -343,12 +343,22 @@ export interface CompaniesMonthlyData {
   daily_trend:  CompanyDailyPoint[];
 }
 
+export interface MonthSummary {
+  month:       string;
+  month_label: string;
+  total:       number;
+  count:       number;
+  prev_total:  number;
+  mom_pct:     number | null;
+}
+
 export interface AnalyticsData {
   weekly_trend:  WeeklyTrendPoint[];
   monthly_trend: MonthlyTrendPoint[];
   drivers_trend: DriverTrend[];
   methods_trend: MethodTrend[];
   dow_analysis:  DowPoint[];
+  month_summary?: MonthSummary;
 }
 
 export interface DashboardData {

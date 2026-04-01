@@ -66,7 +66,10 @@ export const api = {
   },
 
   // Analytics (tendencias históricas)
-  getAnalytics: () => request('/dashboard/analytics.php'),
+  getAnalytics: (month?: string) => {
+    const params = month ? `?month=${month}` : '';
+    return request(`/dashboard/analytics.php${params}`);
+  },
 
   // Consumo mensual de empresas
   getCompaniesMonthly: (month?: string) => {

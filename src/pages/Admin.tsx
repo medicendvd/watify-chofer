@@ -76,15 +76,27 @@ export default function Admin() {
   // Analytics (histórico para gráficas)
   const [analytics, setAnalytics]               = useState<AnalyticsData | null>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [analyticsMonth, setAnalyticsMonth]     = useState('');
 
-  const loadAnalytics = useCallback(async () => {
+  const loadAnalytics = useCallback(async (month?: string) => {
     setAnalyticsLoading(true);
     try {
-      setAnalytics(await api.getAnalytics() as AnalyticsData);
+      setAnalytics(await api.getAnalytics(month) as AnalyticsData);
     } catch { /* silencioso */ } finally {
       setAnalyticsLoading(false);
     }
   }, []);
+
+  const handleChangeAnalyticsMonth = (month: string) => {
+    setAnalytics(null);
+    setAnalyticsMonth(month);
+    loadAnalytics(month || undefined);
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const targetMonth = month || currentMonth;
+    setCompaniesMonth(targetMonth);
+    loadCompanies(targetMonth);
+  };
 
   // Empresas — consumo mensual
   const [companiesData,    setCompaniesData]    = useState<CompaniesMonthlyData | null>(null);
@@ -176,10 +188,10 @@ export default function Admin() {
   // Cargar analytics y empresas solo cuando el usuario abre el tab de gráficas
   useEffect(() => {
     if (tab === 'graficas') {
-      if (!analytics && !analyticsLoading) loadAnalytics();
+      if (!analytics && !analyticsLoading) loadAnalytics(analyticsMonth || undefined);
       if (!companiesData && !companiesLoading) loadCompanies(companiesMonth);
     }
-  }, [tab, analytics, analyticsLoading, loadAnalytics, companiesData, companiesLoading, loadCompanies, companiesMonth]);
+  }, [tab, analytics, analyticsLoading, loadAnalytics, companiesData, companiesLoading, loadCompanies, companiesMonth, analyticsMonth]);
 
   useEffect(() => {
     loadDashboard();
@@ -375,6 +387,8 @@ export default function Admin() {
                 companiesLoading={companiesLoading}
                 companiesMonth={companiesMonth}
                 onChangeCompaniesMonth={handleChangeCompaniesMonth}
+                analyticsMonth={analyticsMonth}
+                onChangeAnalyticsMonth={handleChangeAnalyticsMonth}
               />
             )}
           </>

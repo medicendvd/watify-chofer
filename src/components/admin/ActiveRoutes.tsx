@@ -1043,8 +1043,15 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
                       onDragEnd={() => { setDraggingTxId(null); setDropTarget(null); }}
                       className={`flex items-center justify-between text-xs cursor-grab active:cursor-grabbing transition-opacity ${draggingTxId === tx.id ? 'opacity-40' : ''}`}
                     >
-                      <span className="text-green-700">
-                        {tx.items.map(i => `${i.product} ×${i.quantity}`).join(', ')}
+                      <span className="flex items-baseline gap-1.5 flex-wrap">
+                        <span className="text-green-700">
+                          {tx.items.map(i => `${i.product} ×${i.quantity}`).join(', ')}
+                        </span>
+                        {(tx.customer_name || tx.company_name) && (
+                          <span className="text-[10px] font-semibold text-teal-600 truncate max-w-[120px]">
+                            {tx.customer_name ?? tx.company_name}
+                          </span>
+                        )}
                       </span>
                       <div className="flex items-center gap-1.5">
                         <span className="font-semibold text-green-800">${tx.total.toFixed(0)}</span>

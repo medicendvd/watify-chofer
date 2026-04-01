@@ -16,10 +16,6 @@ function fmt(n: number) {
   return '$' + Number(n).toLocaleString('es-MX', { minimumFractionDigits: 0 });
 }
 
-function formatDate(dateStr: string) {
-  const [, m, d] = dateStr.split('-');
-  return `${parseInt(d)} ${MONTH_NAMES[parseInt(m)]}`;
-}
 
 function DeliveryRow({ d }: { d: CompanyDelivery }) {
   const itemsSummary = d.items.map(i => `${i.product} ×${i.quantity}`).join(' · ');

@@ -65,7 +65,7 @@ foreach ($routes as $route) {
         LEFT JOIN products p ON p.id = ti.product_id
         WHERE t.route_id = ? AND t.payment_method_id = 1
         GROUP BY t.id
-        ORDER BY t.id
+        ORDER BY t.id DESC
     ");
     $efectivoStmt->execute([$routeId]);
     $efectivoSales = $efectivoStmt->fetchAll();

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuthContext } from '../store/authContext';
 import { api } from '../lib/api';
@@ -76,6 +76,39 @@ export default function Live() {
     return () => clearInterval(id);
   }, []);
 
+  // ─── Auto-scroll TV ────────────────────────────────────────────────────────
+  const [autoScroll, setAutoScroll] = useState(false);
+  const accRef      = useRef(0);
+  const pauseUntil  = useRef(0);
+
+  useEffect(() => {
+    if (!autoScroll) { accRef.current = window.scrollY; return; }
+
+    let rafId: number;
+
+    const step = (ts: DOMHighResTimeStamp) => {
+      if (ts < pauseUntil.current) {
+        rafId = requestAnimationFrame(step);
+        return;
+      }
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+      if (maxScroll > 0) {
+        if (accRef.current >= maxScroll - 1) {
+          pauseUntil.current = ts + 3000;   // pausa 3 s en el fondo
+          accRef.current = 0;
+          window.scrollTo(0, 0);
+        } else {
+          accRef.current += 0.8;            // velocidad: ~48 px/s a 60 fps
+          window.scrollTo(0, accRef.current);
+        }
+      }
+      rafId = requestAnimationFrame(step);
+    };
+
+    rafId = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(rafId);
+  }, [autoScroll]);
+
   // ─── Numeración de rutas ───────────────────────────────────────────────────
   const routeNumById = new Map<number, number>();
   const counterPerChofer = new Map<number, number>();
@@ -125,6 +158,13 @@ export default function Live() {
               {showMap ? 'Ver datos' : 'Ver mapa'}
             </button>
           )}
+          <button
+            onClick={() => setAutoScroll(v => !v)}
+            className={`text-xs border rounded-lg px-3 py-1.5 transition-colors ${autoScroll ? 'bg-emerald-600 border-emerald-500 text-white' : 'text-gray-400 hover:text-white border-gray-700'}`}
+            title="Auto-scroll para TV"
+          >
+            {autoScroll ? '⏸ Auto' : '▶ Auto'}
+          </button>
           <button onClick={load} className="text-xs text-gray-400 hover:text-white border border-gray-700 rounded-lg px-3 py-1.5 transition-colors">
             Refrescar
           </button>

@@ -334,6 +334,29 @@ export interface CompanyDailyPoint {
   visits: number;
 }
 
+export interface CompanyDeliveryItem {
+  product:  string;
+  quantity: number;
+}
+
+export interface CompanyDelivery {
+  id:            number;
+  date:          string;
+  customer_name: string | null;
+  notes:         string | null;
+  chofer:        string;
+  total:         number;
+  units:         number;
+  items:         CompanyDeliveryItem[];
+}
+
+export interface CompanyDeliveriesData {
+  company_id: number;
+  company:    string;
+  month:      string;
+  deliveries: CompanyDelivery[];
+}
+
 export interface CompaniesMonthlyData {
   month:        string;
   month_label:  string;

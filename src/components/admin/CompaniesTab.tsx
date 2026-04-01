@@ -4,10 +4,11 @@ import {
   CartesianGrid, AreaChart, Area,
 } from 'recharts';
 import type { CompaniesMonthlyData, CompanyMonthlyRow } from '../../types';
+import CompanyDeliveriesModal from './CompanyDeliveriesModal';
 
 interface Props {
-  data:    CompaniesMonthlyData;
-  month:   string;           // 'YYYY-MM'
+  data:          CompaniesMonthlyData;
+  month:         string;    // 'YYYY-MM'
   onChangeMonth: (m: string) => void;
 }
 
@@ -38,15 +39,14 @@ function ChartTooltip({ active, payload, label }: any) {
   );
 }
 
-function CompanyRow({ row, grandTotal, rank }: { row: CompanyMonthlyRow; grandTotal: number; rank: number }) {
+function CompanyRow({ row, grandTotal, rank, onClickName }: { row: CompanyMonthlyRow; grandTotal: number; rank: number; onClickName: () => void }) {
   const [open, setOpen] = useState(false);
   const pct = grandTotal > 0 ? (row.total / grandTotal) * 100 : 0;
 
   return (
     <>
       <tr
-        className="border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition-colors"
-        onClick={() => row.products.length > 0 && setOpen(v => !v)}
+        className="border-b border-gray-50 hover:bg-gray-50 transition-colors"
       >
         <td className="px-4 py-3">
           <div className="flex items-center gap-2.5">
@@ -59,7 +59,12 @@ function CompanyRow({ row, grandTotal, rank }: { row: CompanyMonthlyRow; grandTo
               {rank}
             </span>
             <div>
-              <p className="text-sm font-semibold text-gray-800">{row.company}</p>
+              <button
+                onClick={onClickName}
+                className="text-sm font-semibold text-[#0f1c5e] hover:underline text-left leading-tight"
+              >
+                {row.company}
+              </button>
               <div className="mt-0.5 h-1 w-20 bg-gray-100 rounded-full overflow-hidden">
                 <div className="h-full rounded-full" style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${NAVY}, ${MINT})` }} />
               </div>
@@ -76,17 +81,22 @@ function CompanyRow({ row, grandTotal, rank }: { row: CompanyMonthlyRow; grandTo
           <span className="text-sm font-bold text-gray-900">{fmt(row.total)}</span>
           <p className="text-[10px] text-gray-400">{pct.toFixed(1)}%</p>
         </td>
-        {row.products.length > 0 && (
-          <td className="px-3 py-3 text-center">
-            <svg
-              className={`w-3.5 h-3.5 text-gray-400 mx-auto transition-transform ${open ? 'rotate-180' : ''}`}
-              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
+        <td className="px-3 py-3 text-center">
+          {row.products.length > 0 && (
+            <button
+              onClick={() => setOpen(v => !v)}
+              className="p-1 rounded hover:bg-gray-100 transition-colors"
+              title="Ver productos"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-            </svg>
-          </td>
-        )}
-        {row.products.length === 0 && <td />}
+              <svg
+                className={`w-3.5 h-3.5 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`}
+                fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          )}
+        </td>
       </tr>
       {open && (
         <tr className="bg-blue-50/40 border-b border-blue-100">
@@ -121,6 +131,7 @@ function getMonthOptions(n = 6) {
 
 export default function CompaniesTab({ data, month, onChangeMonth }: Props) {
   const monthOptions = getMonthOptions(6);
+  const [modalCompany, setModalCompany] = useState<{ id: number; name: string } | null>(null);
 
   // Top 8 para la gráfica de barras
   const chartData = data.companies.slice(0, 8).map(c => ({
@@ -244,6 +255,7 @@ export default function CompaniesTab({ data, month, onChangeMonth }: Props) {
                       row={row}
                       grandTotal={data.grand_total}
                       rank={i + 1}
+                      onClickName={() => setModalCompany({ id: row.company_id, name: row.company })}
                     />
                   ))}
                 </tbody>
@@ -260,6 +272,16 @@ export default function CompaniesTab({ data, month, onChangeMonth }: Props) {
             </div>
           </div>
         </>
+      )}
+
+      {modalCompany && (
+        <CompanyDeliveriesModal
+          companyId={modalCompany.id}
+          companyName={modalCompany.name}
+          month={month}
+          monthLabel={data.month_label}
+          onClose={() => setModalCompany(null)}
+        />
       )}
     </div>
   );

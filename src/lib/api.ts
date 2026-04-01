@@ -77,6 +77,10 @@ export const api = {
     return request(`/dashboard/companies_monthly.php${params}`);
   },
 
+  // Entregas individuales de una empresa en un mes
+  getCompanyDeliveries: (companyId: number, month: string) =>
+    request(`/dashboard/company_deliveries.php?company_id=${companyId}&month=${encodeURIComponent(month)}`),
+
   // Weekly summary
   getWeeklySummary: () => request('/dashboard/weekly.php'),
   confirmWeeklyDay: (chofer_id: number, date: string) =>

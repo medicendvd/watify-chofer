@@ -11,7 +11,7 @@ $pdo    = getDB();
 // GET — obtener ruta activa del usuario
 if ($method === 'GET') {
     $stmt = $pdo->prepare(
-        "SELECT r.id, r.garrafones_loaded, r.status, r.started_at,
+        "SELECT r.id, r.garrafones_loaded, r.packs_loaded, r.status, r.started_at,
                 -- Recargas vendidas en esta ruta (quantity suma múltiples items)
                 COALESCE(SUM(CASE WHEN p.name = 'Recarga' THEN ti.quantity ELSE 0 END), 0) AS recargas_vendidas,
                 COALESCE(SUM(CASE WHEN p.name = 'Nuevo'   THEN ti.quantity ELSE 0 END), 0) AS nuevos_vendidos,
@@ -50,6 +50,7 @@ if ($method === 'GET') {
     jsonResponse([
         'id'               => (int)$route['id'],
         'garrafones_loaded'=> $loaded,
+        'packs_loaded'     => (int)$route['packs_loaded'],
         'status'           => $route['status'],
         'started_at'       => $route['started_at'],
         'garrafones' => [
@@ -68,8 +69,9 @@ if ($method === 'GET') {
 
 // POST — crear nueva ruta
 if ($method === 'POST') {
-    $body      = getBody();
+    $body       = getBody();
     $garrafones = (int)($body['garrafones_loaded'] ?? 0);
+    $packs      = max(0, (int)($body['packs_loaded'] ?? 0));
     if ($garrafones <= 0) jsonError('Indica cuántos garrafones cargaste');
 
     // Finalizar cualquier ruta activa previa
@@ -78,14 +80,15 @@ if ($method === 'POST') {
     )->execute([$user['id']]);
 
     $stmt = $pdo->prepare(
-        'INSERT INTO routes (user_id, garrafones_loaded, status) VALUES (?, ?, "active")'
+        'INSERT INTO routes (user_id, garrafones_loaded, packs_loaded, status) VALUES (?, ?, ?, "active")'
     );
-    $stmt->execute([$user['id'], $garrafones]);
+    $stmt->execute([$user['id'], $garrafones, $packs]);
     $routeId = $pdo->lastInsertId();
 
     jsonResponse([
         'id'                => (int)$routeId,
         'garrafones_loaded' => $garrafones,
+        'packs_loaded'      => $packs,
         'status'            => 'active',
         'garrafones' => [
             'cargados'          => $garrafones,

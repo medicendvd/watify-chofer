@@ -397,7 +397,7 @@ export default function Chofer() {
         )}
 
         {/* Contador de garrafones */}
-        <GarrafonesCounter stats={route.garrafones} />
+        <GarrafonesCounter stats={route.garrafones} packsLoaded={route.packs_loaded} />
 
         {/* Botón garrafón quebrado */}
         <button

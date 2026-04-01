@@ -77,6 +77,7 @@ export interface GarrafonStats {
 export interface Route {
   id: number;
   garrafones_loaded: number;
+  packs_loaded: number;
   status: 'active' | 'finished';
   started_at: string;
   garrafones: GarrafonStats;

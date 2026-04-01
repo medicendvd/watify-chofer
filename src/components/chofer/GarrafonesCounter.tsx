@@ -1,10 +1,11 @@
 import type { GarrafonStats } from '../../types';
 
 interface Props {
-  stats: GarrafonStats;
+  stats:       GarrafonStats;
+  packsLoaded: number;
 }
 
-export default function GarrafonesCounter({ stats }: Props) {
+export default function GarrafonesCounter({ stats, packsLoaded }: Props) {
   return (
     <div className="bg-water-50 border border-water-200 rounded-2xl p-4">
       <h3 className="text-xs font-semibold text-water-700 uppercase tracking-wide mb-3 flex items-center gap-1.5">
@@ -38,6 +39,19 @@ export default function GarrafonesCounter({ stats }: Props) {
           </p>
         </div>
       </div>
+
+      {packsLoaded > 0 && (
+        <div className="mt-2 bg-white rounded-xl px-4 py-2.5 flex justify-between items-center shadow-sm border border-water-100">
+          <div className="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-water-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M20 7H4a2 2 0 00-2 2v6a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2" />
+            </svg>
+            <span className="text-sm text-gray-600 font-medium">Packs de agua</span>
+          </div>
+          <span className="text-xl font-bold text-water-700">{packsLoaded}</span>
+        </div>
+      )}
     </div>
   );
 }

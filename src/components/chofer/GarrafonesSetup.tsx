@@ -10,6 +10,7 @@ interface Props {
 
 export default function GarrafonesSetup({ userName, onRouteCreated, onBack }: Props) {
   const [count, setCount] = useState('');
+  const [packs, setPacks] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -19,7 +20,7 @@ export default function GarrafonesSetup({ userName, onRouteCreated, onBack }: Pr
     setLoading(true);
     setError('');
     try {
-      const route = await api.createRoute(n) as Route;
+      const route = await api.createRoute(n, packs) as Route;
       onRouteCreated(route);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Error');
@@ -74,14 +75,37 @@ export default function GarrafonesSetup({ userName, onRouteCreated, onBack }: Pr
             >+</button>
           </div>
 
+          {/* Packs de agua */}
+          <div className="border-t border-gray-100 pt-6 mt-2">
+            <h2 className="text-base font-bold text-gray-700 text-center mb-1">
+              ¿Cargaste Packs de agua?
+            </h2>
+            <p className="text-xs text-gray-400 text-center mb-4">
+              Opcional — déjalo en 0 si no cargaste
+            </p>
+            <div className="flex items-center justify-center gap-4">
+              <button
+                onClick={() => setPacks(v => Math.max(0, v - 1))}
+                className="w-12 h-12 rounded-full bg-gray-100 hover:bg-gray-200 text-2xl font-bold text-gray-600 flex items-center justify-center transition-colors"
+              >−</button>
+              <span className="w-16 text-center text-4xl font-bold text-gray-800 tabular-nums">
+                {packs}
+              </span>
+              <button
+                onClick={() => setPacks(v => v + 1)}
+                className="w-12 h-12 rounded-full bg-water-100 hover:bg-water-200 text-2xl font-bold text-water-600 flex items-center justify-center transition-colors"
+              >+</button>
+            </div>
+          </div>
+
           {error && (
-            <p className="text-red-500 text-sm text-center mb-4 bg-red-50 rounded-lg py-2">{error}</p>
+            <p className="text-red-500 text-sm text-center mb-4 bg-red-50 rounded-lg py-2 mt-4">{error}</p>
           )}
 
           <button
             onClick={handleSubmit}
             disabled={loading || !count || parseInt(count) <= 0}
-            className="w-full py-4 bg-water-600 hover:bg-water-700 disabled:opacity-50 text-white font-bold text-lg rounded-2xl transition-colors"
+            className="w-full py-4 bg-water-600 hover:bg-water-700 disabled:opacity-50 text-white font-bold text-lg rounded-2xl transition-colors mt-6"
           >
             {loading ? 'Iniciando ruta...' : 'Iniciar ruta →'}
           </button>

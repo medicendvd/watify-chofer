@@ -15,6 +15,7 @@ dist-ssr
 # Credenciales — nunca subir al repo
 api/config/db.php
 api/config/stripe.php
+.env
 
 # Editor directories and files
 .vscode/*

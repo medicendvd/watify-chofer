@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuthContext } from '../store/authContext';
 import { useCartStore } from '../store/cartStore';
 import { api } from '../lib/api';
+import { enqueue, type PendingTransaction } from '../lib/offlineQueue';
+import { useOfflineSync } from '../hooks/useOfflineSync';
 import type { Product, PaymentMethod, Company, Transaction, Route, ExtraLoad } from '../types';
 import ProductCard from '../components/chofer/ProductCard';
 import CartSummary from '../components/chofer/CartSummary';
@@ -71,6 +73,18 @@ export default function Chofer() {
 
   // Perfil
   const [showProfile, setShowProfile] = useState(false);
+
+  // Offline
+  const [syncToast, setSyncToast] = useState('');
+  const [pendingLocal, setPendingLocal] = useState<PendingTransaction[]>([]);
+
+  const { isOnline, pendingCount, refreshCount, syncing } = useOfflineSync((synced) => {
+    setSyncToast(`${synced} venta${synced > 1 ? 's' : ''} sincronizada${synced > 1 ? 's' : ''} ✓`);
+    setPendingLocal([]);
+    setTimeout(() => setSyncToast(''), 4000);
+    loadTransactions();
+    refreshRoute();
+  });
 
   // Al cargar: verificar ruta activa
   useEffect(() => {
@@ -159,19 +173,20 @@ export default function Chofer() {
 
   const handleConfirm = async () => {
     setSubmitting(true);
+    const txData = {
+      customer_name: customerName,
+      company_id: selectedCompany,
+      payment_method_id: selectedMethod.id,
+      notes,
+      route_id: route?.id ?? null,
+      items: items.map(i => ({
+        product_id: i.product.id,
+        quantity: i.quantity,
+        unit_price: i.unit_price,
+      })),
+    };
     try {
-      await api.createTransaction({
-        customer_name: customerName,
-        company_id: selectedCompany,
-        payment_method_id: selectedMethod.id,
-        notes,
-        route_id: route?.id ?? null,
-        items: items.map(i => ({
-          product_id: i.product.id,
-          quantity: i.quantity,
-          unit_price: i.unit_price,
-        })),
-      });
+      await api.createTransaction(txData);
       clearCart();
       setCustomerName('');
       setNotes('');
@@ -181,7 +196,29 @@ export default function Chofer() {
       setShowModal(false);
       await Promise.all([loadTransactions(), refreshRoute()]);
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : 'Error al registrar');
+      // TypeError = sin conexión (fetch no pudo conectar)
+      const isNetworkError = e instanceof TypeError;
+      if (isNetworkError) {
+        const pending = enqueue(txData, {
+          customerName,
+          companyName: company?.name ?? null,
+          paymentMethodName: selectedMethod.name,
+          paymentMethodColor: selectedMethod.color,
+          total: total(),
+          itemsSummary: items.map(i => `${i.product.name} ×${i.quantity}`).join(' · '),
+        });
+        setPendingLocal(prev => [...prev, pending]);
+        refreshCount();
+        clearCart();
+        setCustomerName('');
+        setNotes('');
+        setShowNotes(false);
+        setSelectedCompany(null);
+        setSelectedMethod(PAYMENT_METHODS[0]);
+        setShowModal(false);
+      } else {
+        alert(e instanceof Error ? e.message : 'Error al registrar');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -223,6 +260,32 @@ export default function Chofer() {
           Salir
         </button>
       </div>
+
+      {/* Banner offline */}
+      {!isOnline && (
+        <div className="bg-amber-500 text-white text-sm font-medium px-4 py-2.5 flex items-center justify-between">
+          <span>Sin conexión — las ventas se guardarán y sincronizarán al volver</span>
+          {pendingCount > 0 && (
+            <span className="bg-white text-amber-600 text-xs font-bold px-2 py-0.5 rounded-full ml-3 shrink-0">
+              {pendingCount} pendiente{pendingCount > 1 ? 's' : ''}
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Banner sincronizando */}
+      {isOnline && syncing && (
+        <div className="bg-blue-500 text-white text-sm font-medium px-4 py-2.5 text-center">
+          Sincronizando ventas pendientes...
+        </div>
+      )}
+
+      {/* Toast sincronizado */}
+      {syncToast && (
+        <div className="bg-green-500 text-white text-sm font-semibold px-4 py-2.5 text-center">
+          {syncToast}
+        </div>
+      )}
 
       <div className="px-4 mt-5 space-y-5 max-w-md mx-auto">
 
@@ -365,6 +428,36 @@ export default function Chofer() {
         >
           Registrar venta →
         </button>
+
+        {/* Ventas guardadas sin conexión */}
+        {pendingLocal.length > 0 && (
+          <div>
+            <h2 className="text-xs font-semibold text-amber-500 uppercase tracking-wide mb-3">Sin sincronizar</h2>
+            <div className="space-y-2">
+              {pendingLocal.map(p => (
+                <div key={p.localId} className="bg-white rounded-xl p-3 shadow-sm border-l-4 border-amber-400 flex items-start gap-3 opacity-80">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-full text-white"
+                        style={{ backgroundColor: p.meta.paymentMethodColor }}>
+                        {p.meta.paymentMethodName}
+                      </span>
+                      {p.meta.customerName && (
+                        <span className="text-xs text-gray-500 truncate">{p.meta.customerName}</span>
+                      )}
+                      {p.meta.companyName && (
+                        <span className="text-xs text-purple-600 font-medium">{p.meta.companyName}</span>
+                      )}
+                      <span className="text-xs bg-amber-100 text-amber-700 font-semibold px-2 py-0.5 rounded-full">Pendiente</span>
+                    </div>
+                    <div className="text-xs text-gray-400 mt-0.5">{p.meta.itemsSummary}</div>
+                  </div>
+                  <span className="font-bold text-gray-900">${p.meta.total.toFixed(0)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Últimas 3 transacciones */}
         {transactions.length > 0 && (

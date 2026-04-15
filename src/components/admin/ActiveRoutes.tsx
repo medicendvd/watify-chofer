@@ -869,6 +869,22 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
 
       <div className="p-4 space-y-3">
 
+        {/* Botón reactivar ruta — solo rutas finalizadas, encima de garrafones */}
+        {muted && (
+          <div className="flex justify-center">
+            <button
+              onClick={() => setReactivateConfirm(true)}
+              className="flex items-center gap-1.5 font-bold text-sm rounded-xl"
+              style={{ background: '#42ffff', color: '#000000', padding: '8px 20px' }}
+            >
+              <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+              </svg>
+              Reactivar ruta
+            </button>
+          </div>
+        )}
+
         {/* Garrafones — sección destacada */}
         <div className={`rounded-2xl p-4 border ${muted ? 'bg-gray-50 border-gray-200' : 'border-gray-100'}`} style={!muted ? { background: '#f0fdf9' } : {}}>
           <p className={`text-xs font-bold uppercase tracking-widest mb-3 ${muted ? 'text-gray-500' : 'text-emerald-700'}`}>
@@ -1248,19 +1264,6 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
               </div>
             </div>
           </div>
-        )}
-
-        {/* Botón reactivar ruta — solo rutas finalizadas */}
-        {muted && (
-          <button
-            onClick={() => setReactivateConfirm(true)}
-            className="w-full py-2 rounded-xl text-xs font-semibold border border-amber-300 text-amber-700 hover:bg-amber-50 hover:border-amber-400 transition-colors flex items-center justify-center gap-1.5"
-          >
-            <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-            </svg>
-            Reactivar ruta
-          </button>
         )}
 
         {/* Modal confirmación reactivar ruta */}

@@ -35,6 +35,17 @@ if ($method === 'GET') {
         jsonResponse(null);
     }
 
+    // ── Auto-finish si la ruta es de un día anterior ──────────────────────
+    if (isset($route['started_at']) && date('Y-m-d', strtotime($route['started_at'])) < date('Y-m-d')) {
+        $pdo->prepare("
+            UPDATE routes
+            SET status = 'finished',
+                finished_at = DATE_FORMAT(DATE(started_at), '%Y-%m-%d 23:59:00')
+            WHERE id = ?
+        ")->execute([$route['id']]);
+        jsonResponse(null);
+    }
+
     // Calcular conteos de garrafones
     $loaded          = (int)$route['garrafones_loaded'];
     $recargas        = (int)$route['recargas_vendidas'];

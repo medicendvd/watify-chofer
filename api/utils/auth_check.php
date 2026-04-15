@@ -1,13 +1,6 @@
 <?php
 date_default_timezone_set('America/Mexico_City');
-/**
- * Verifica que haya sesión activa.
- * Opcionalmente restringe a roles específicos.
- *
- * Uso:
- *   requireAuth();              // cualquier usuario logueado
- *   requireAuth(['Admin']);     // solo Admins
- */
+
 function requireAuth(array $roles = []): array {
     if (session_status() === PHP_SESSION_NONE) {
         session_set_cookie_params([
@@ -19,12 +12,38 @@ function requireAuth(array $roles = []): array {
         ]);
         session_start();
     }
+
+    // ── Si la sesión PHP expiró, intentar restaurarla con el remember_token ──
+    if (empty($_SESSION['user_id'])) {
+        $token = $_COOKIE['remember_token'] ?? '';
+        if ($token !== '') {
+            try {
+                require_once __DIR__ . '/../config/db.php';
+                $pdo  = getDB();
+                $stmt = $pdo->prepare(
+                    'SELECT id, name, role FROM users
+                     WHERE remember_token = ?
+                       AND remember_token_expires > NOW()'
+                );
+                $stmt->execute([$token]);
+                $user = $stmt->fetch();
+                if ($user) {
+                    $_SESSION['user_id']   = $user['id'];
+                    $_SESSION['user_name'] = $user['name'];
+                    $_SESSION['user_role'] = $user['role'];
+                }
+            } catch (\Throwable $e) { /* ignorar — jsonError abajo si sigue vacío */ }
+        }
+    }
+
     if (empty($_SESSION['user_id'])) {
         jsonError('No autorizado', 401);
     }
+
     if (!empty($roles) && !in_array($_SESSION['user_role'], $roles, true)) {
         jsonError('Acceso denegado', 403);
     }
+
     return [
         'id'   => $_SESSION['user_id'],
         'name' => $_SESSION['user_name'],

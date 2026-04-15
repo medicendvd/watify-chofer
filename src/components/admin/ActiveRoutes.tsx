@@ -683,6 +683,8 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
   const [loadingMethods, setLoadingMethods] = useState(false);
   const [deletingTxId,   setDeletingTxId]   = useState<number | null>(null);
   const [txToDelete,     setTxToDelete]     = useState<number | null>(null);
+  const [reactivateConfirm, setReactivateConfirm] = useState(false);
+  const [reactivating,      setReactivating]      = useState(false);
 
   const handleDeleteTx = async (txId: number) => {
     setDeletingTxId(txId);
@@ -754,6 +756,19 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
       alert(e instanceof Error ? e.message : 'Error al finalizar');
     } finally {
       setFinishing(false);
+    }
+  };
+
+  const handleReactivateRoute = async () => {
+    setReactivating(true);
+    try {
+      await api.reactivateRoute(route.route_id);
+      setReactivateConfirm(false);
+      onRefresh?.();
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : 'Error al reactivar');
+    } finally {
+      setReactivating(false);
     }
   };
 
@@ -1229,6 +1244,56 @@ function RouteCard({ route, muted = false, routeNumber = 1, onRefresh }: RouteCa
                   className="flex-1 py-3 bg-red-500 text-white rounded-2xl text-sm font-semibold disabled:opacity-50 hover:bg-red-600 transition-colors"
                 >
                   {finishing ? 'Finalizando...' : 'Finalizar'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Botón reactivar ruta — solo rutas finalizadas */}
+        {muted && (
+          <button
+            onClick={() => setReactivateConfirm(true)}
+            className="w-full py-2 rounded-xl text-xs font-semibold border border-amber-300 text-amber-700 hover:bg-amber-50 hover:border-amber-400 transition-colors flex items-center justify-center gap-1.5"
+          >
+            <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            Reactivar ruta
+          </button>
+        )}
+
+        {/* Modal confirmación reactivar ruta */}
+        {reactivateConfirm && (
+          <div className="fixed inset-0 bg-black/50 z-[9999] flex items-end sm:items-center justify-center p-4">
+            <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden">
+              <div className="px-5 pt-5 pb-4 border-b border-gray-100">
+                <h3 className="font-bold text-gray-900 text-base">Reactivar ruta</h3>
+                <p className="text-xs text-gray-400 mt-0.5">La ruta volverá a estar activa para edición</p>
+              </div>
+              <div className="px-5 py-5">
+                <p className="text-sm text-gray-700 text-center">
+                  ¿Reactivar la ruta de{' '}
+                  <span className="font-bold text-gray-900">{route.chofer_name}</span>?
+                </p>
+                <p className="text-xs text-amber-600 text-center mt-2 bg-amber-50 rounded-xl px-3 py-2 border border-amber-100">
+                  El chofer podrá ver y registrar ventas nuevamente hasta que se finalice de nuevo.
+                </p>
+              </div>
+              <div className="px-5 pb-5 flex gap-3">
+                <button
+                  onClick={() => setReactivateConfirm(false)}
+                  disabled={reactivating}
+                  className="flex-1 py-3 border border-gray-200 rounded-2xl text-sm text-gray-500 disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleReactivateRoute}
+                  disabled={reactivating}
+                  className="flex-1 py-3 bg-amber-500 text-white rounded-2xl text-sm font-semibold disabled:opacity-50 hover:bg-amber-600 transition-colors"
+                >
+                  {reactivating ? 'Reactivando...' : 'Reactivar'}
                 </button>
               </div>
             </div>

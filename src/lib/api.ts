@@ -105,6 +105,8 @@ export const api = {
     request('/routes/index.php', { method: 'PATCH', body: JSON.stringify({ route_id, garrafones_loaded }) }),
   finishRoute: (route_id: number) =>
     request('/routes/finish.php', { method: 'POST', body: JSON.stringify({ route_id }) }),
+  reactivateRoute: (route_id: number) =>
+    request('/routes/reactivate.php', { method: 'POST', body: JSON.stringify({ route_id }) }),
 
   // Broken garrafones
   registerBroken: (route_id: number, was_full: boolean, condition_type: string) =>
